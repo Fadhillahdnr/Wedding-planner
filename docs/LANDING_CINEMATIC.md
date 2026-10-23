@@ -3,8 +3,7 @@
 Spesifikasi: `docs/CINEMATIC_WEDDING_PLANNER_LANDING_PAGE.md`. Halaman: `resources/js/pages/landing.tsx`.
 
 ## Aset video
-- Sumber (tidak diubah): `public/assets/Chibi_couple_under_wedding_arch_20261023150634.mp4`.
-- Salinan yang dipakai: `public/videos/our-little-world.mp4` (identik, bukan hasil kompresi).
+- File yang dipakai: `public/videos/our-little-world.mp4`, salinan byte-per-byte dari unggahan asli `Chibi_couple_under_wedding_arch_20261023150634.mp4` (bukan hasil kompresi). Salinan di `public/assets/` dihapus; file asli masih ada di riwayat git (commit `33573a1`).
 - Hasil inspeksi: 10,0 dtk, 1280×720 (16:9), H.264 + trek audio AAC, 3,9 MB. Isi: pasangan di tengah, di bawah lengkungan bunga; tulisan "Our Little World" sudah menempel di kiri atas video.
 - **Tidak dioptimasi**: FFmpeg tidak terpasang di mesin ini. Belum dibuat poster, crop mobile khusus, atau versi tanpa audio. Video dibisukan lewat atribut `muted`.
 - **Kemulusan loop belum diperiksa** (belum ada pembandingan bingkai awal dan akhir). Bila ada loncatan saat mengulang, perlu diedit di luar.
