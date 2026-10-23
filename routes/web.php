@@ -4,6 +4,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LandingVideoController;
 use App\Http\Controllers\LoveNoteController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MemoryController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\WeddingSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingController::class)->name('home');
+Route::get('video/{name}', LandingVideoController::class)->name('landing.video');
 
 Route::get('undangan/{token}', [InvitationController::class, 'show'])->name('invitation.show');
 Route::post('undangan/{token}', [InvitationController::class, 'accept'])->middleware('throttle:6,1')->name('invitation.accept');

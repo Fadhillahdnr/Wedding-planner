@@ -1,26 +1,35 @@
 import { Pause, Play } from 'lucide-react';
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 
-export const VIDEO_SRC = '/videos/our-little-world.mp4';
+export const SCRUB_SRC = '/video/our-little-world-scrub.mp4';
+export const LOOP_SRC = '/video/our-little-world.mp4';
+export const POSTER_SRC = '/videos/our-little-world-poster.jpg';
 
 /**
- * Strategi pemutaran: loop biasa (bukan scrub currentTime); scroll menggerakkan wadah, teks, dan lapisan sekitarnya.
- * Autoplay bisa diblokir browser, dan reduced motion tidak memutar otomatis: bingkai pertama tetap tampil dan tombol putar tersedia.
+ * - scrub: salinan all-intra (setiap frame keyframe, tanpa audio); `currentTime` mengikuti progres scroll.
+ * - loop:  video asli diputar berulang (fallback bila seek lambat, hemat data, atau berkas scrub gagal).
+ * - still: hanya poster (reduced motion).
+ * Satu mode aktif pada satu waktu, jadi loop tidak pernah berebut dengan scrub.
  */
+export type VideoMode = 'scrub' | 'loop' | 'still';
+
 export function useVideoPlayback(reducedMotion: boolean) {
     const video = useRef<HTMLVideoElement>(null);
+    const [mode, setMode] = useState<VideoMode>('scrub');
     const [playing, setPlaying] = useState(false);
     const [failed, setFailed] = useState(false);
 
     useEffect(() => {
-        const el = video.current;
-        if (!el) return;
-        if (reducedMotion) {
-            el.pause();
-            return;
-        }
-        el.play().catch(() => {});
+        const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+        if (reducedMotion) setMode('still');
+        else if (connection?.saveData) setMode('loop');
+        else setMode((m) => (m === 'still' ? 'scrub' : m));
     }, [reducedMotion]);
+
+    useEffect(() => {
+        if (mode !== 'loop') return;
+        video.current?.play().catch(() => {});
+    }, [mode]);
 
     const toggle = useCallback(() => {
         const el = video.current;
@@ -29,7 +38,7 @@ export function useVideoPlayback(reducedMotion: boolean) {
         else el.pause();
     }, []);
 
-    return { video, playing, failed, toggle, setPlaying, setFailed };
+    return { video, mode, setMode, playing, failed, toggle, setPlaying, setFailed };
 }
 
 type Playback = ReturnType<typeof useVideoPlayback>;
@@ -38,37 +47,41 @@ interface StageProps {
     /** Wadah yang menerima transform scroll (skala); dipegang oleh hook animasi. */
     frameRef: RefObject<HTMLDivElement | null>;
     playback: Playback;
-    reducedMotion: boolean;
 }
 
-export function VideoStage({ frameRef, playback, reducedMotion }: StageProps) {
-    const { video, failed, setPlaying, setFailed } = playback;
+export function VideoStage({ frameRef, playback }: StageProps) {
+    const { video, mode, failed, setMode, setPlaying, setFailed } = playback;
+    const src = mode === 'scrub' ? SCRUB_SRC : mode === 'loop' ? LOOP_SRC : undefined;
 
     return (
         <div ref={frameRef} className="from-mint to-blush/60 absolute inset-0 overflow-hidden bg-gradient-to-b will-change-transform">
             {!failed && (
                 <video
+                    // Remount saat mode berganti agar atribut loop/autoplay/preload diterapkan bersih.
+                    key={mode}
                     ref={video}
                     className="size-full object-cover object-[50%_45%]"
-                    src={VIDEO_SRC}
+                    src={src}
+                    poster={POSTER_SRC}
                     muted
-                    loop
                     playsInline
-                    autoPlay={!reducedMotion}
-                    preload="metadata"
+                    loop={mode === 'loop'}
+                    autoPlay={mode === 'loop'}
+                    preload={mode === 'scrub' ? 'auto' : mode === 'loop' ? 'metadata' : 'none'}
                     tabIndex={-1}
                     aria-hidden="true"
                     onPlay={() => setPlaying(true)}
                     onPause={() => setPlaying(false)}
-                    onError={() => setFailed(true)}
+                    onError={() => (mode === 'scrub' ? setMode('loop') : setFailed(true))}
                 />
             )}
         </div>
     );
 }
 
+/** Tombol jeda hanya relevan saat video berputar sendiri (mode loop). */
 export function VideoToggle({ playback }: { playback: Playback }) {
-    if (playback.failed) return null;
+    if (playback.failed || playback.mode !== 'loop') return null;
     const Icon = playback.playing ? Pause : Play;
 
     return (

@@ -1,6 +1,6 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { type RefObject, useLayoutEffect } from 'react';
+import { type RefObject, useEffect, useLayoutEffect } from 'react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -130,4 +130,69 @@ export function useLandingMotion({ root, frame }: Refs) {
             ctx.revert();
         };
     }, [root, frame]);
+}
+
+/**
+ * Scrub video: `currentTime` mengikuti progres scroll di section cerita.
+ * Dihaluskan per frame lewat ticker GSAP (tidak mencari pada setiap event scroll) dan tidak mencari
+ * saat seek sebelumnya belum selesai. Bila seek rata-rata lambat, `onSlow` mengalihkan ke mode loop.
+ */
+export function useVideoScrub(video: RefObject<HTMLVideoElement | null>, story: RefObject<HTMLElement | null>, enabled: boolean, onSlow: () => void) {
+    useEffect(() => {
+        const el = video.current;
+        const section = story.current;
+        if (!enabled || !el || !section) return;
+
+        let duration = 0;
+        let target = 0;
+        let current = 0;
+        let seekStart = 0;
+        const seekTimes: number[] = [];
+
+        const onMeta = () => {
+            duration = el.duration || 0;
+        };
+        const onSeeked = () => {
+            if (!seekStart) return;
+            seekTimes.push(performance.now() - seekStart);
+            seekStart = 0;
+            if (seekTimes.length >= 24) {
+                const average = seekTimes.reduce((a, b) => a + b, 0) / seekTimes.length;
+                seekTimes.length = 0;
+                if (average > 220) onSlow();
+            }
+        };
+
+        if (el.readyState >= 1) onMeta();
+        el.addEventListener('loadedmetadata', onMeta);
+        el.addEventListener('seeked', onSeeked);
+        el.pause();
+
+        const trigger = ScrollTrigger.create({
+            trigger: section,
+            start: 'top top',
+            end: 'bottom bottom',
+            onUpdate: (self) => {
+                target = self.progress * Math.max(0, duration - 0.05);
+            },
+        });
+
+        const tick = () => {
+            if (!duration) return;
+            current += (target - current) * 0.18;
+            if (Math.abs(target - current) < 0.005) current = target;
+            if (!el.seeking && Math.abs(el.currentTime - current) > 0.01) {
+                seekStart = performance.now();
+                el.currentTime = current;
+            }
+        };
+        gsap.ticker.add(tick);
+
+        return () => {
+            gsap.ticker.remove(tick);
+            trigger.kill();
+            el.removeEventListener('loadedmetadata', onMeta);
+            el.removeEventListener('seeked', onSeeked);
+        };
+    }, [video, story, enabled, onSlow]);
 }

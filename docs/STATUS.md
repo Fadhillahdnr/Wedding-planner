@@ -12,8 +12,8 @@ Keputusan: Hari H tetap `date` (aturan AGENTS.md), bukan datetime; palet pastel 
 Belum: video/audio di Kenangan, tag/kategori kenangan, notifikasi, sidebar (navigasi tetap top bar + bottom bar), Vitest/axe.
 
 ## Landing sinematik (docs/LANDING_CINEMATIC.md)
-Selesai dan dilihat di browser (desktop + mobile 390): video `public/videos/our-little-world.mp4` sebagai stage sticky, scroll ber-scrub (GSAP ScrollTrigger), 6 adegan.
-Belum: optimasi/poster video (FFmpeg tidak ada), uji reduced motion/tablet/Safari.
+Selesai dan dilihat di browser (desktop + mobile 390): video `public/videos/our-little-world.mp4` sebagai stage sticky, video ber-scrub mengikuti scroll, (GSAP ScrollTrigger), 6 adegan.
+Video disajikan scrub (all-intra + route berdukungan Range). Belum: uji reduced motion/tablet/Safari/jaringan lambat.
 
 ## Sebagian
 - Cloudinary: foto pertemuan + dokumen kandidat selesai dan diuji dengan fake (14 test); **belum diverifikasi ke Cloudinary sungguhan** — jalankan `php artisan media:check`.

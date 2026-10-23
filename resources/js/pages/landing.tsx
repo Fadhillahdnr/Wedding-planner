@@ -1,9 +1,9 @@
-import { useLandingMotion } from '@/components/landing/use-landing-motion';
+import { useLandingMotion, useVideoScrub } from '@/components/landing/use-landing-motion';
 import { VideoStage, VideoToggle, useVideoPlayback } from '@/components/landing/video-stage';
 import { Button } from '@/components/ui/button';
 import { Head, Link } from '@inertiajs/react';
 import { CalendarRange, Images, Wallet } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
     phases: string[];
@@ -35,6 +35,7 @@ function Words({ children }: { children: string }) {
 export default function Landing({ phases }: Props) {
     const root = useRef<HTMLDivElement>(null);
     const frame = useRef<HTMLDivElement>(null);
+    const story = useRef<HTMLElement>(null);
     const [reduced, setReduced] = useState(false);
 
     useEffect(() => {
@@ -46,7 +47,10 @@ export default function Landing({ phases }: Props) {
     }, []);
 
     const playback = useVideoPlayback(reduced);
+    const { setMode } = playback;
+    const slowToLoop = useCallback(() => setMode('loop'), [setMode]);
     useLandingMotion({ root, frame });
+    useVideoScrub(playback.video, story, playback.mode === 'scrub', slowToLoop);
 
     return (
         <div ref={root} className="bg-ivory text-plum min-h-screen overflow-x-clip">
@@ -84,12 +88,12 @@ export default function Landing({ phases }: Props) {
 
             <main id="atas">
                 {/* Adegan 1-3: stage sticky, dikendalikan scroll (tanpa pin/penguncian scroll). */}
-                <section data-story aria-labelledby="judul" className="relative h-[300svh] motion-reduce:h-auto max-md:h-[240svh]">
+                <section ref={story} data-story aria-labelledby="judul" className="relative h-[300svh] motion-reduce:h-auto max-md:h-[240svh]">
                     <div className="sticky top-0 h-svh overflow-hidden motion-reduce:relative motion-reduce:h-[100svh]">
                         <div data-veil className="from-mint/60 via-ivory to-ivory absolute inset-0 bg-gradient-to-b opacity-0" />
 
                         <div data-window className="absolute inset-x-0 top-0 h-[64svh] md:inset-0 md:h-auto">
-                            <VideoStage frameRef={frame} playback={playback} reducedMotion={reduced} />
+                            <VideoStage frameRef={frame} playback={playback} />
                             {/* Gradien hanya di tepi bawah/kiri untuk keterbacaan; wajah tetap bersih. */}
                             <div
                                 aria-hidden="true"
