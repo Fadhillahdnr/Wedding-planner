@@ -22,7 +22,7 @@ docker compose exec app php artisan app:create-owner --name="Nama" --email=kamu@
 Buka http://localhost:8000. Kode di folder ini di-bind-mount ke container: edit PHP → langsung aktif, edit React → HMR Vite (port 5173),
 tanpa `compose up`/build ulang. Rebuild hanya perlu bila `Dockerfile` berubah. `vendor/` dan `node_modules/` disimpan di volume Docker (bukan di host).
 Container selalu memakai PostgreSQL lokal (`db`, host port 5434), bukan Supabase di `.env`. Perintah lain: `docker compose exec app vendor/bin/pest`
-(DB test `wedding_test` tersedia, tetapi `phpunit.xml` menunjuk 127.0.0.1:5433 — lihat catatan di bawah), `docker compose down` (tambah `-v` untuk menghapus data).
+(belum bisa: `phpunit.xml` menunjuk 127.0.0.1:5433; jalankan test dari host seperti di bawah), `docker compose down` (tambah `-v` untuk menghapus data).
 
 ## Test & kualitas
 ```bash
