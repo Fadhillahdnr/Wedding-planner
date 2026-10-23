@@ -48,7 +48,7 @@ function MemoryDialog({ open, onOpenChange, memory }: { open: boolean; onOpenCha
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{memory ? 'Ubah kenangan' : 'Simpan kenangan'}</DialogTitle>
-                    <DialogDescription>Foto bisa ditambahkan dari kartu kenangan setelah disimpan.</DialogDescription>
+                    <DialogDescription>Foto dan video bisa ditambahkan dari kartu kenangan setelah disimpan.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="grid gap-4" noValidate>
                     <TextField
@@ -106,7 +106,7 @@ export default function MemoriesIndex({ memories }: Props) {
                 <PageHeader
                     eyebrow="Kenangan"
                     title="Cerita yang ingin kita simpan"
-                    description="Momen kecil dan fotonya, hanya terlihat oleh kalian berdua."
+                    description="Momen kecil beserta foto dan videonya, hanya terlihat oleh kalian berdua."
                     actions={
                         <Button className="h-11" onClick={openNew}>
                             <Plus className="size-4" strokeWidth={1.5} aria-hidden="true" /> Tambah kenangan
@@ -160,13 +160,7 @@ export default function MemoriesIndex({ memories }: Props) {
                                 </div>
                                 {m.caption && <p className="text-ink-soft mt-2 max-w-prose whitespace-pre-line">{m.caption}</p>}
                                 <div className="mt-4">
-                                    <MediaGallery
-                                        target="memory"
-                                        targetId={m.id}
-                                        items={m.media}
-                                        accept="image/jpeg,image/png,image/webp"
-                                        label="Tambah foto"
-                                    />
+                                    <MediaGallery target="memory" targetId={m.id} items={m.media} video label="Tambah foto atau video" />
                                 </div>
                             </li>
                         ))}
@@ -181,7 +175,7 @@ export default function MemoriesIndex({ memories }: Props) {
                 open={deleting !== null}
                 onOpenChange={(o) => !o && setDeleting(null)}
                 title="Hapus kenangan ini?"
-                description={`“${deleting?.title ?? ''}” beserta fotonya akan dihapus permanen.`}
+                description={`“${deleting?.title ?? ''}” beserta foto dan videonya akan dihapus permanen.`}
                 confirmLabel="Hapus"
                 destructive
                 onConfirm={() => deleting && router.delete(`/kenangan/${deleting.id}`, { preserveScroll: true, onSuccess: () => setDeleting(null) })}

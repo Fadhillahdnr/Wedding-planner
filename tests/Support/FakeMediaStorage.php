@@ -23,17 +23,17 @@ class FakeMediaStorage implements MediaStorage
         return $this->configured;
     }
 
-    public function signUpload(string $publicId, array $formats): array
+    public function signUpload(string $publicId, array $formats, string $resourceType = 'image'): array
     {
-        return ['url' => 'https://upload.test', 'fields' => ['public_id' => $publicId, 'type' => 'authenticated', 'allowed_formats' => implode(',', $formats), 'signature' => 'sig']];
+        return ['url' => "https://upload.test/{$resourceType}", 'fields' => ['public_id' => $publicId, 'type' => 'authenticated', 'allowed_formats' => implode(',', $formats), 'signature' => 'sig']];
     }
 
-    public function inspect(string $publicId): ?array
+    public function inspect(string $publicId, string $resourceType = 'image'): ?array
     {
         return $this->remote[$publicId] ?? null;
     }
 
-    public function delete(string $publicId): bool
+    public function delete(string $publicId, string $resourceType = 'image'): bool
     {
         if ($this->failDelete) {
             return false;
@@ -48,6 +48,11 @@ class FakeMediaStorage implements MediaStorage
     public function url(MediaAsset $asset): string
     {
         return 'https://res.test/'.$asset->public_id.'?sig=1';
+    }
+
+    public function posterUrl(MediaAsset $asset): string
+    {
+        return 'https://res.test/'.$asset->public_id.'.jpg?sig=1';
     }
 
     public function upload(string $publicId, string $format = 'jpg', int $bytes = 1000): void

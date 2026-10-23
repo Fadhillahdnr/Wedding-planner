@@ -35,7 +35,7 @@ class MemoryController extends Controller
 
         $log->record('memory.created');
 
-        return back()->with('success', 'Kenangan disimpan. Foto bisa ditambahkan dari kartunya.');
+        return back()->with('success', 'Kenangan disimpan. Foto dan video bisa ditambahkan dari kartunya.');
     }
 
     public function update(Request $request, Memory $memory)

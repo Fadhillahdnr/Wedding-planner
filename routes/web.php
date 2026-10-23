@@ -72,6 +72,7 @@ Route::middleware(['auth', 'workspace'])->group(function () {
     Route::post('media/tanda-tangan', [MediaController::class, 'signature'])->middleware('throttle:media-signature')->name('media.signature');
     Route::post('media/{asset}/konfirmasi', [MediaController::class, 'confirm'])->middleware('throttle:media-signature')->name('media.confirm');
     Route::get('media/{asset}', [MediaController::class, 'show'])->name('media.show');
+    Route::get('media/{asset}/poster', [MediaController::class, 'poster'])->name('media.poster');
     Route::delete('media/{asset}', [MediaController::class, 'destroy'])->name('media.destroy');
 
     Route::get('pengaturan/pernikahan', [WeddingSettingsController::class, 'edit'])->name('wedding.edit');

@@ -25,7 +25,7 @@ class MediaLibrary
      */
     public function confirm(MediaAsset $asset, array $formats): ?string
     {
-        $info = $this->storage->inspect($asset->public_id);
+        $info = $this->storage->inspect($asset->public_id, $asset->resource_type);
 
         if ($info === null) {
             return 'Berkas belum ditemukan di penyimpanan. Coba unggah ulang.';
@@ -36,8 +36,8 @@ class MediaLibrary
 
         if (! in_array($format, $formats, true)) {
             $error = 'Format berkas tidak diizinkan.';
-        } elseif ($info['bytes'] > config('media.max_bytes')) {
-            $error = 'Ukuran berkas melebihi batas '.round(config('media.max_bytes') / 1048576).' MB.';
+        } elseif ($info['bytes'] > ($limit = $this->maxBytes($asset->resource_type))) {
+            $error = 'Ukuran berkas melebihi batas '.round($limit / 1048576).' MB.';
         }
 
         if ($error) {
@@ -48,7 +48,11 @@ class MediaLibrary
 
         $asset->forceFill([
             'status' => 'ready',
-            'kind' => $format === 'pdf' ? 'document' : 'photo',
+            'kind' => match (true) {
+                $asset->resource_type === 'video' => 'video',
+                $format === 'pdf' => 'document',
+                default => 'photo',
+            },
             'format' => $format,
             'bytes' => $info['bytes'],
             'width' => $info['width'],
@@ -58,10 +62,16 @@ class MediaLibrary
         return null;
     }
 
+    /** Batas ukuran setelah dikompres di browser: gambar/PDF mengikuti `max_bytes`, video `video_max_bytes`. */
+    public function maxBytes(string $resourceType): int
+    {
+        return (int) config($resourceType === 'video' ? 'media.video_max_bytes' : 'media.max_bytes');
+    }
+
     /** Hapus di penyimpanan dulu; baris DB hanya dihapus bila itu berhasil. */
     public function purge(MediaAsset $asset): bool
     {
-        if (! $this->storage->delete($asset->public_id)) {
+        if (! $this->storage->delete($asset->public_id, $asset->resource_type ?: 'image')) {
             return false;
         }
 

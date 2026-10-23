@@ -43,6 +43,8 @@ class HandleInertiaRequests extends Middleware
                 'is_owner' => (bool) $request->user()?->isOwner(),
             ],
             'couple' => fn () => $request->user()?->wedding()?->coupleLabel(),
+            // Batas hasil kompresi: klien memakainya untuk memilih tingkat kompresi; server tetap memverifikasi ulang.
+            'media' => ['max_bytes' => (int) config('media.max_bytes'), 'video_max_bytes' => (int) config('media.video_max_bytes')],
             'flash' => ['success' => fn () => $request->session()->get('success')],
         ]);
     }

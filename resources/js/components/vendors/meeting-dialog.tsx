@@ -36,13 +36,7 @@ export function MeetingDialog({ open, onOpenChange, candidate, slotId, today }: 
                 {candidate && (
                     <section aria-label="Dokumen penawaran" className="space-y-2">
                         <h3 className="text-sm font-medium">Dokumen penawaran</h3>
-                        <MediaGallery
-                            target="vendor_candidate"
-                            targetId={candidate.id}
-                            items={candidate.media}
-                            accept="application/pdf,image/jpeg,image/png,image/webp"
-                            label="Tambah dokumen / foto"
-                        />
+                        <MediaGallery target="vendor_candidate" targetId={candidate.id} items={candidate.media} pdf label="Tambah dokumen / foto" />
                     </section>
                 )}
 
@@ -63,13 +57,7 @@ export function MeetingDialog({ open, onOpenChange, candidate, slotId, today }: 
                                     </Button>
                                 </div>
                                 {m.notes && <p className="text-ink-soft whitespace-pre-line">{m.notes}</p>}
-                                <MediaGallery
-                                    target="vendor_meeting"
-                                    targetId={m.id}
-                                    items={m.media}
-                                    accept="image/jpeg,image/png,image/webp"
-                                    label="Tambah foto"
-                                />
+                                <MediaGallery target="vendor_meeting" targetId={m.id} items={m.media} label="Tambah foto" />
                                 {m.follow_up && (
                                     <p className="flex flex-wrap items-center gap-2">
                                         <span>
