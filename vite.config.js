@@ -15,6 +15,10 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    // Di Docker, Vite berjalan di container tetapi browser mengaksesnya lewat localhost.
+    server: process.env.VITE_ORIGIN
+        ? { host: '0.0.0.0', origin: process.env.VITE_ORIGIN, hmr: { host: 'localhost' } }
+        : undefined,
     esbuild: {
         jsx: 'automatic',
     },
