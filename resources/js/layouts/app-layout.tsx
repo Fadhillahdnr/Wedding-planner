@@ -1,13 +1,13 @@
-import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
+import PlannerLayout from '@/layouts/planner-layout';
 import { type BreadcrumbItem } from '@/types';
+import { type ReactNode } from 'react';
 
 interface AppLayoutProps {
-    children: React.ReactNode;
+    children: ReactNode;
     breadcrumbs?: BreadcrumbItem[];
 }
 
-export default ({ children, breadcrumbs, ...props }: AppLayoutProps) => (
-    <AppLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
-        {children}
-    </AppLayoutTemplate>
-);
+/** Titik masuk layout untuk semua halaman terautentikasi (breadcrumbs dipertahankan agar halaman bawaan tetap kompatibel). */
+export default function AppLayout({ children }: AppLayoutProps) {
+    return <PlannerLayout>{children}</PlannerLayout>;
+}

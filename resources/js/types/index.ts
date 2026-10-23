@@ -2,6 +2,7 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
     user: User;
+    is_owner: boolean;
 }
 
 export interface BreadcrumbItem {
@@ -21,20 +22,10 @@ export interface NavItem {
     isActive?: boolean;
 }
 
-export interface SiteConfig {
-    name: string;
-    tagline: string;
-    email: string;
-    phone: string;
-    whatsapp: string | null;
-    instagram: string | null;
-    address: string;
-}
-
 export interface SharedData {
     name: string;
-    site: SiteConfig;
     auth: Auth;
+    couple: string | null;
     flash: { success: string | null };
     [key: string]: unknown;
 }
@@ -43,48 +34,134 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    role: 'admin' | 'staff' | 'customer' | 'vendor';
-    avatar?: string;
-    email_verified_at: string | null;
     [key: string]: unknown;
 }
 
-export interface Paginated<T> {
-    data: T[];
-    links: { url: string | null; label: string; active: boolean }[];
-    current_page: number;
-    last_page: number;
-    total: number;
+export interface BudgetPlan {
+    need: number;
+    months_left: number | null;
+    event_passed: boolean;
+    required_per_month: number | null;
+    planned_per_month: number;
+    on_track: boolean;
+    shortfall_per_month: number;
+    meet_months: number | null;
+    meet_date: string | null;
+    meets_before_event: boolean | null;
 }
 
-export interface PackageItem {
+export interface TaskItem {
     id: number;
-    name: string;
-    slug: string;
-    tagline: string | null;
+    title: string;
     description: string | null;
-    price_from: string | null;
-    is_featured: boolean;
-    is_published: boolean;
-    features?: { id: number; label: string }[];
+    due_date: string | null;
+    status: 'belum' | 'dikerjakan' | 'selesai' | 'dilewati';
+    priority: 'rendah' | 'normal' | 'tinggi';
+    phase: number | null;
+    assignee_id: number | null;
+    assignee: string | null;
+    vendor_slot_id: number | null;
+    date_locked: boolean;
+    needs_reschedule: boolean;
+    from_template: boolean;
 }
 
-export interface VendorItem {
+export interface BudgetItemData {
     id: number;
     name: string;
-    slug: string;
-    description: string | null;
+    pricing_mode: 'fixed' | 'per_guest';
+    estimate_min: number | null;
+    estimate_max: number | null;
+    price_per_guest: number | null;
+    agreed_amount: number | null;
+    notes: string | null;
+    estimate_mid: number;
+    projected: number;
+    paid: number;
+    overpaid: boolean;
+}
+
+export interface BudgetCategoryData {
+    id: number;
+    name: string;
+    allocated_amount: number;
+    projected: number;
+    items: BudgetItemData[];
+}
+
+export interface FundingData {
+    id: number;
+    name: string;
+    collected_amount: number;
+    target_amount: number | null;
+    monthly_contribution: number;
+}
+
+export interface PaymentData {
+    id: number;
+    budget_item_id: number;
+    item: string | null;
+    label: string;
+    amount: number;
+    due_date: string | null;
+    status: 'direncanakan' | 'jatuh_tempo' | 'lunas' | 'dibatalkan';
+    paid_on: string | null;
+    method: string | null;
+    notes: string | null;
+}
+
+export interface VendorSlotRow {
+    id: number;
+    name: string;
+    need: 'needed' | 'optional' | 'not_needed';
+    ideal_months_before: number | null;
+    candidate_count: number;
+    chosen: { id: number; name: string; quoted_price: number | null } | null;
+    status: string;
+}
+
+export interface CriterionData {
+    id: number;
+    name: string;
+    weight: number;
+}
+
+export interface MediaItem {
+    id: number;
+    kind: 'photo' | 'document';
+    format: string | null;
+    bytes: number;
+}
+
+export interface MeetingData {
+    id: number;
+    media: MediaItem[];
+    met_on: string;
+    notes: string | null;
+    follow_up: string | null;
+}
+
+export interface CandidateData {
+    id: number;
+    name: string;
     city: string | null;
-    price_min: string | null;
-    price_max: string | null;
-    category?: { id: number; name: string; slug: string };
-}
-
-export interface VendorAdminItem extends VendorItem {
-    vendor_category_id: number;
-    contact_email: string | null;
-    contact_phone: string | null;
-    status: 'draft' | 'pending' | 'published';
-    is_featured: boolean;
-    media: { id: number; secure_url: string; alt_text: string | null }[];
+    phone: string | null;
+    instagram: string | null;
+    website: string | null;
+    package_name: string | null;
+    quoted_price: number | null;
+    quoted_on: string | null;
+    quote_valid_until: string | null;
+    inclusions: string | null;
+    exclusions: string | null;
+    pros: string | null;
+    cons: string | null;
+    source: string | null;
+    notes: string | null;
+    status: 'shortlist' | 'dihubungi' | 'survei' | 'negosiasi' | 'terpilih' | 'ditolak';
+    scores: Record<string, number>;
+    weighted_score: number | null;
+    estimate_difference: number | null;
+    media: MediaItem[];
+    meetings: MeetingData[];
 }

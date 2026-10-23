@@ -48,3 +48,23 @@ function something()
 {
     // ..
 }
+
+use App\Enums\MemberRole;
+use App\Models\User;
+use App\Models\Wedding;
+use App\Models\WeddingMember;
+
+/**
+ * Membuat satu workspace lengkap dengan pemilik. Mengembalikan [pengguna, workspace].
+ *
+ * @param  array<string,mixed>  $wedding
+ * @return array{0: User, 1: Wedding}
+ */
+function workspace(array $wedding = [], MemberRole $role = MemberRole::Owner): array
+{
+    $wedding = Wedding::create($wedding + ['onboarded_at' => now()]);
+    $user = User::factory()->create();
+    WeddingMember::create(['wedding_id' => $wedding->id, 'user_id' => $user->id, 'role' => $role]);
+
+    return [$user, $wedding];
+}

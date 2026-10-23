@@ -1,0 +1,81 @@
+# Jalankan sekali: `docker compose up -d`. Setelah itu cukup edit kode di host:
+# PHP membaca file langsung dari bind mount, dan Vite HMR memuat ulang browser.
+# Variabel di `environment` mengalahkan .env, jadi container selalu memakai DB lokal
+# (bukan Supabase) walau .env Anda berisi kredensial Supabase.
+x-app: &app
+  build: .
+  volumes:
+    - .:/var/www/html
+    - vendor:/var/www/html/vendor
+  environment: &env
+    DB_CONNECTION: pgsql
+    DB_HOST: db
+    DB_PORT: "5432"
+    DB_DATABASE: wedding
+    DB_USERNAME: postgres
+    DB_PASSWORD: secret
+    DB_URL: ""
+    PHP_CLI_SERVER_WORKERS: "4"
+    APP_URL: http://localhost:8000
+    # Di belakang tunnel Cloudflare (HTTPS) — percayai header X-Forwarded-*.
+    TRUSTED_PROXIES: "*"
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *app
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8000) ? 0 : 1);"]
+      interval: 3s
+      retries: 60
+
+  queue:
+    <<: *app
+    command: php artisan queue:work --tries=1 --sleep=2
+    depends_on:
+      app:
+        condition: service_healthy
+
+  # Aset dibangun ulang otomatis tiap file berubah (tanpa dev server), supaya
+  # halaman juga berfungsi lewat tunnel publik. Muat ulang browser untuk melihat perubahan.
+  vite:
+    image: node:22-bookworm-slim
+    working_dir: /var/www/html
+    command: sh -c "rm -f public/hot && npm ci && npm run build -- --watch"
+    environment:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+
+  # Quick tunnel Cloudflare: URL https://<acak>.trycloudflare.com berubah tiap start.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://app:8000
+    depends_on:
+      app:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: wedding
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wedding"]
+      interval: 3s
+      retries: 20
+
+volumes:
+  vendor:
+  node_modules:
+  pgdata:

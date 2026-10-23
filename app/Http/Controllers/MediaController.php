@@ -2,88 +2,102 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Event;
 use App\Models\MediaAsset;
-use App\Models\Vendor;
-use App\Services\Cloudinary\CloudinaryService;
+use App\Services\ActivityLogger;
+use App\Services\Media\MediaLibrary;
+use App\Services\Media\MediaStorage;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
-use RuntimeException;
+use Illuminate\Validation\Rule;
 
 class MediaController extends Controller
 {
-    private function rules(): array
-    {
-        return [
-            'collection' => ['required', 'in:portfolio,vendors,audio,event'],
-            'resource_type' => ['required', 'in:image,video,audio'],
-            'event_id' => ['nullable', 'integer'],
-            'vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
-            'visibility' => ['nullable', 'in:public,private'],
-        ];
-    }
+    public function __construct(private MediaStorage $storage, private MediaLibrary $library) {}
 
-    public function signature(Request $request, CloudinaryService $cloudinary)
+    /** Langkah 1: server menyiapkan baris `pending` + parameter unggah bertanda tangan. */
+    public function signature(Request $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
-        $event = isset($data['event_id']) ? Event::find($data['event_id']) : null;
-        $folder = $cloudinary->resolveFolder($request->user(), $data['collection'], $event);
-        // Media event pelanggan selalu privat.
-        $private = $data['collection'] === 'event' || ($data['visibility'] ?? 'public') === 'private';
-
-        try {
-            return response()->json($cloudinary->signUpload($folder, $data['resource_type'], $private));
-        } catch (RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 503);
-        }
-    }
-
-    public function store(Request $request, CloudinaryService $cloudinary)
-    {
-        $data = $request->validate($this->rules() + [
-            'public_id' => ['required', 'string', 'max:255'],
-            'format' => ['required', 'string', 'max:10'],
-            'bytes' => ['required', 'integer', 'min:1'],
-            'secure_url' => ['required', 'url'],
-            'width' => ['nullable', 'integer'],
-            'height' => ['nullable', 'integer'],
-            'duration' => ['nullable', 'numeric'],
-            'alt_text' => ['nullable', 'string', 'max:255'],
+        $data = $request->validate([
+            'target' => ['required', Rule::in(array_keys(config('media.targets')))],
+            'target_id' => ['required', 'integer'],
         ]);
 
-        $event = isset($data['event_id']) ? Event::find($data['event_id']) : null;
-        $folder = $cloudinary->resolveFolder($request->user(), $data['collection'], $event);
-        // Hanya koleksi vendor (khusus staf, sudah dijaga resolveFolder) yang boleh menempel ke Vendor.
-        $vendor = $data['collection'] === 'vendors' && isset($data['vendor_id']) ? Vendor::find($data['vendor_id']) : null;
-
-        $asset = $cloudinary->recordUpload($request->user(), $folder, $data['resource_type'], $data, [
-            'mediable_type' => $event ? Event::class : ($vendor ? Vendor::class : null),
-            'mediable_id' => $event?->id ?? $vendor?->id,
-            'alt_text' => $data['alt_text'] ?? null,
-            'visibility' => $data['collection'] === 'event' ? 'private' : ($data['visibility'] ?? 'public'),
-            'collection' => $data['collection'],
-        ]);
-
-        return response()->json(['id' => $asset->id], 201);
-    }
-
-    public function destroy(MediaAsset $asset, CloudinaryService $cloudinary)
-    {
-        Gate::authorize('delete', $asset);
-
-        try {
-            $cloudinary->delete($asset);
-        } catch (RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 502);
+        if (! $this->storage->isConfigured()) {
+            return response()->json(['message' => 'Penyimpanan media belum dikonfigurasi.'], 503);
         }
 
-        return response()->json(['ok' => true]);
+        $config = config("media.targets.{$data['target']}");
+        // Model memakai scope wedding_id: ID milik workspace lain → 404.
+        $target = $config['model']::findOrFail($data['target_id']);
+
+        $count = MediaAsset::where('mediable_type', $target->getMorphClass())->where('mediable_id', $target->getKey())->count();
+        if ($count >= config('media.max_per_item')) {
+            return response()->json(['message' => 'Batas jumlah berkas untuk item ini sudah tercapai.'], 422);
+        }
+
+        $publicId = $this->library->publicId($request->user()->weddingId(), $data['target'], $target->getKey());
+
+        $asset = new MediaAsset([
+            'uploaded_by' => $request->user()->id,
+            'provider' => 'cloudinary',
+            'public_id' => $publicId,
+            'kind' => 'photo',
+            'resource_type' => 'image',
+            'delivery_type' => 'authenticated',
+            'status' => 'pending',
+        ]);
+        $asset->mediable()->associate($target);
+        $asset->save();
+
+        return response()->json([
+            'asset_id' => $asset->id,
+            'upload' => $this->storage->signUpload($publicId, $config['formats']),
+        ]);
     }
 
-    public function show(MediaAsset $asset, CloudinaryService $cloudinary)
+    /** Langkah 3: server memeriksa ulang aset yang diklaim klien sudah terunggah. */
+    public function confirm(MediaAsset $asset): JsonResponse
     {
-        Gate::authorize('view', $asset);
+        abort_unless($asset->status === 'pending', 409, 'Berkas sudah dikonfirmasi.');
 
-        return redirect()->away($cloudinary->deliveryUrl($asset));
+        $formats = $this->formatsFor($asset);
+
+        if ($error = $this->library->confirm($asset, $formats)) {
+            return response()->json(['message' => $error], 422);
+        }
+
+        return response()->json(['id' => $asset->id, 'kind' => $asset->kind, 'format' => $asset->format, 'bytes' => $asset->bytes]);
+    }
+
+    /** Menampilkan aset privat: hanya anggota workspace pemilik, lewat URL bertanda tangan. */
+    public function show(MediaAsset $asset): RedirectResponse
+    {
+        abort_unless($asset->status === 'ready', 404);
+
+        return redirect()->away($this->storage->url($asset))->header('Cache-Control', 'private, max-age=300');
+    }
+
+    public function destroy(MediaAsset $asset, ActivityLogger $log): JsonResponse|RedirectResponse
+    {
+        if (! $this->library->purge($asset)) {
+            return response()->json(['message' => 'Gagal menghapus berkas di penyimpanan. Coba lagi.'], 502);
+        }
+
+        $log->record('media.deleted', ['kind' => $asset->kind]);
+
+        return back()->with('success', 'Berkas dihapus.');
+    }
+
+    /** @return list<string> */
+    private function formatsFor(MediaAsset $asset): array
+    {
+        foreach (config('media.targets') as $config) {
+            if ((new $config['model'])->getMorphClass() === $asset->mediable_type) {
+                return $config['formats'];
+            }
+        }
+
+        abort(422, 'Target tidak dikenal.');
     }
 }
