@@ -1,0 +1,5 @@
+# Cloudinary
+Isi `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` di `.env` (jangan di-commit). Tanpa konfigurasi, `POST /media/signature` mengembalikan 503 dengan pesan jelas.
+Alur: (1) `POST /media/signature` (auth) → server memeriksa hak atas koleksi/event, mengembalikan parameter bertanda tangan (secret tidak pernah dikirim). (2) Browser upload langsung ke Cloudinary. (3) `POST /media` mencatat metadata; server memverifikasi `public_id` berada di folder yang diotorisasi, format, ukuran, dan host `secure_url`. (4) `DELETE /media/{id}` menghapus di Cloudinary dulu, record DB dihapus hanya bila berhasil.
+Folder: `wedding-planner/{portfolio|vendors|audio|events/{id}}`. Media event pelanggan bersifat privat (`type=authenticated`) dan dikirim lewat signed URL via `GET /media/{id}` setelah cek policy. Batas ukuran/format di `config/cloudinary.php`.
+**Belum diverifikasi terhadap Cloudinary sungguhan** (tidak ada kredensial); logika diuji dengan fake gateway. UI uploader: `resources/js/components/media-uploader.tsx` (dipakai di `admin/vendors` untuk foto vendor via `vendor_id`). Pemutar musik latar (tanpa autoplay) belum dibuat.

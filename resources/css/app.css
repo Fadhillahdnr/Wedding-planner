@@ -1,0 +1,193 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Cormorant Garamond', 'Times New Roman', Georgia, serif;
+    --color-champagne: var(--champagne);
+    --color-sage: var(--sage);
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--border);
+    }
+}
+
+:root {
+    --background: hsl(40, 38%, 97%);
+    --foreground: hsl(28, 12%, 14%);
+    --card: hsl(40, 40%, 99%);
+    --card-foreground: hsl(28, 12%, 14%);
+    --popover: hsl(40, 40%, 99%);
+    --popover-foreground: hsl(28, 12%, 14%);
+    --primary: hsl(28, 12%, 16%);
+    --primary-foreground: hsl(40, 38%, 97%);
+    --secondary: hsl(38, 28%, 92%);
+    --secondary-foreground: hsl(28, 12%, 16%);
+    --muted: hsl(38, 26%, 93%);
+    --muted-foreground: hsl(28, 9%, 36%);
+    --accent: hsl(38, 32%, 89%);
+    --accent-foreground: hsl(28, 12%, 16%);
+    --destructive: hsl(4, 62%, 42%);
+    --destructive-foreground: hsl(0, 0%, 98%);
+    --border: hsl(36, 20%, 85%);
+    --input: hsl(36, 18%, 80%);
+    --ring: hsl(34, 45%, 38%);
+    --champagne: hsl(36, 42%, 62%);
+    --sage: hsl(104, 12%, 42%);
+    --chart-1: hsl(36, 42%, 52%);
+    --chart-2: hsl(104, 12%, 42%);
+    --chart-3: hsl(28, 12%, 30%);
+    --chart-4: hsl(20, 30%, 55%);
+    --chart-5: hsl(45, 30%, 70%);
+    --radius: 0.25rem;
+    --sidebar-background: hsl(38, 30%, 94%);
+    --sidebar-foreground: hsl(28, 10%, 28%);
+    --sidebar-primary: hsl(28, 12%, 16%);
+    --sidebar-primary-foreground: hsl(40, 38%, 97%);
+    --sidebar-accent: hsl(38, 30%, 88%);
+    --sidebar-accent-foreground: hsl(28, 12%, 16%);
+    --sidebar-border: hsl(36, 20%, 85%);
+    --sidebar-ring: hsl(34, 45%, 38%);
+}
+
+.dark {
+    --background: hsl(28, 10%, 8%);
+    --foreground: hsl(40, 30%, 94%);
+    --card: hsl(28, 9%, 11%);
+    --card-foreground: hsl(40, 30%, 94%);
+    --popover: hsl(28, 9%, 11%);
+    --popover-foreground: hsl(40, 30%, 94%);
+    --primary: hsl(40, 38%, 92%);
+    --primary-foreground: hsl(28, 12%, 12%);
+    --secondary: hsl(28, 8%, 16%);
+    --secondary-foreground: hsl(40, 30%, 94%);
+    --muted: hsl(28, 8%, 14%);
+    --muted-foreground: hsl(36, 12%, 68%);
+    --accent: hsl(28, 8%, 18%);
+    --accent-foreground: hsl(40, 30%, 94%);
+    --destructive: hsl(4, 70%, 62%);
+    --destructive-foreground: hsl(0, 0%, 98%);
+    --border: hsl(28, 8%, 20%);
+    --input: hsl(28, 8%, 24%);
+    --ring: hsl(36, 50%, 62%);
+    --champagne: hsl(36, 45%, 66%);
+    --sage: hsl(104, 14%, 62%);
+    --chart-1: hsl(36, 45%, 62%);
+    --chart-2: hsl(104, 14%, 58%);
+    --chart-3: hsl(40, 20%, 80%);
+    --chart-4: hsl(20, 35%, 62%);
+    --chart-5: hsl(45, 30%, 70%);
+    --sidebar-background: hsl(28, 10%, 10%);
+    --sidebar-foreground: hsl(40, 20%, 80%);
+    --sidebar-primary: hsl(40, 38%, 92%);
+    --sidebar-primary-foreground: hsl(28, 12%, 12%);
+    --sidebar-accent: hsl(28, 8%, 17%);
+    --sidebar-accent-foreground: hsl(40, 30%, 94%);
+    --sidebar-border: hsl(28, 8%, 18%);
+    --sidebar-ring: hsl(36, 50%, 62%);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+    h1,
+    h2,
+    h3,
+    .font-display {
+        font-family: var(--font-serif);
+        letter-spacing: -0.01em;
+    }
+    :focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}

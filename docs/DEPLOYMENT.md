@@ -1,0 +1,2 @@
+# Deployment
+Set `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` (HTTPS), kredensial DB PostgreSQL, `MAIL_*`, `CLOUDINARY_*`, `SITE_*`. Jalankan `composer install --no-dev -o`, `npm ci && npm run build`, `php artisan migrate --force`, `php artisan config:cache route:cache view:cache`. Jangan jalankan seeder demo di produksi. Queue: `php artisan queue:work` (driver `database`). Health check: `/up`. Backup DB berkala. SSR opsional: `npm run build:ssr` lalu `php artisan inertia:start-ssr` (belum diverifikasi).
