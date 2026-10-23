@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Memory;
 use App\Models\VendorCandidate;
 use App\Models\VendorMeeting;
 
@@ -31,6 +32,10 @@ return [
     'targets' => [
         'vendor_meeting' => [
             'model' => VendorMeeting::class,
+            'formats' => ['jpg', 'jpeg', 'png', 'webp'],
+        ],
+        'memory' => [
+            'model' => Memory::class,
             'formats' => ['jpg', 'jpeg', 'png', 'webp'],
         ],
         'vendor_candidate' => [

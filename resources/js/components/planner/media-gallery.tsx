@@ -5,7 +5,7 @@ import { FileText, LoaderCircle, Paperclip, Trash2 } from 'lucide-react';
 import { ChangeEvent, useRef, useState } from 'react';
 
 interface Props {
-    target: 'vendor_meeting' | 'vendor_candidate';
+    target: 'vendor_meeting' | 'vendor_candidate' | 'memory';
     targetId: number;
     items: MediaItem[];
     accept: string;
