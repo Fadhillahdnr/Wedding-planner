@@ -1,61 +1,65 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\VendorAdminController;
-use App\Http\Controllers\Customer\BookingController;
-use App\Http\Controllers\Customer\PlannerController;
-use App\Http\Controllers\MediaController;
-use App\Http\Controllers\Public\ConsultationController;
-use App\Http\Controllers\Public\SeoController;
-use App\Http\Controllers\Public\SiteController;
-use App\Http\Middleware\EnsureStaff;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\VendorController;
+use App\Http\Controllers\WeddingSettingsController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [SiteController::class, 'home'])->name('home');
-Route::get('paket', [SiteController::class, 'packages'])->name('packages.index');
-Route::get('paket/{package}', [SiteController::class, 'package'])->name('packages.show');
-Route::get('vendor', [SiteController::class, 'vendors'])->name('vendors.index');
-Route::get('vendor/{vendor}', [SiteController::class, 'vendor'])->name('vendors.show');
-Route::get('portofolio', [SiteController::class, 'portfolio'])->name('portfolio.index');
-Route::get('konsultasi', [ConsultationController::class, 'create'])->name('consultation.create');
-Route::post('konsultasi', [ConsultationController::class, 'store'])->middleware('throttle:consultation')->name('consultation.store');
-Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
-Route::get('robots.txt', [SeoController::class, 'robots']);
+Route::redirect('/', '/dashboard')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', [PlannerController::class, 'dashboard'])->name('dashboard');
-    Route::put('dashboard/event', [PlannerController::class, 'saveEvent'])->name('event.save');
-    Route::post('dashboard/tasks', [PlannerController::class, 'storeTask'])->name('tasks.store');
-    Route::patch('dashboard/tasks/{task}', [PlannerController::class, 'toggleTask'])->name('tasks.toggle');
-    Route::delete('dashboard/tasks/{task}', [PlannerController::class, 'destroyTask'])->name('tasks.destroy');
-    Route::post('dashboard/budget', [PlannerController::class, 'storeBudgetItem'])->name('budget.store');
-    Route::delete('dashboard/budget/{item}', [PlannerController::class, 'destroyBudgetItem'])->name('budget.destroy');
+Route::get('undangan/{token}', [InvitationController::class, 'show'])->name('invitation.show');
+Route::post('undangan/{token}', [InvitationController::class, 'accept'])->middleware('throttle:6,1')->name('invitation.accept');
 
-    Route::get('booking', [BookingController::class, 'index'])->name('bookings.index');
-    Route::post('booking', [BookingController::class, 'store'])->name('bookings.store');
-    Route::patch('booking/{booking}/batal', [BookingController::class, 'cancel'])->name('bookings.cancel');
+Route::middleware(['auth', 'workspace:any'])->group(function () {
+    Route::get('onboarding', [OnboardingController::class, 'show'])->name('onboarding');
+    Route::post('onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
+});
 
-    Route::post('media/signature', [MediaController::class, 'signature'])->name('media.signature');
-    Route::post('media', [MediaController::class, 'store'])->name('media.store');
-    Route::get('media/{asset}', [MediaController::class, 'show'])->name('media.show');
-    Route::delete('media/{asset}', [MediaController::class, 'destroy'])->name('media.destroy');
+Route::middleware(['auth', 'workspace'])->group(function () {
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    Route::prefix('admin')->middleware(EnsureStaff::class)->group(function () {
-        Route::get('/', [AdminController::class, 'index'])->name('admin.index');
-        Route::get('leads', [AdminController::class, 'leads'])->name('admin.leads');
-        Route::patch('leads/{lead}', [AdminController::class, 'updateLead'])->name('admin.leads.update');
-        Route::delete('leads/{lead}', [AdminController::class, 'destroyLead'])->name('admin.leads.destroy');
-        Route::get('bookings', [AdminController::class, 'bookings'])->name('admin.bookings');
-        Route::patch('bookings/{booking}', [AdminController::class, 'updateBooking'])->name('admin.bookings.update');
-        Route::get('packages', [AdminController::class, 'packages'])->name('admin.packages');
-        Route::post('packages', [AdminController::class, 'storePackage'])->name('admin.packages.store');
-        Route::put('packages/{package}', [AdminController::class, 'updatePackage'])->name('admin.packages.update');
-        Route::delete('packages/{package}', [AdminController::class, 'destroyPackage'])->name('admin.packages.destroy');
-        Route::get('vendors', [VendorAdminController::class, 'index'])->name('admin.vendors');
-        Route::post('vendors', [VendorAdminController::class, 'store'])->name('admin.vendors.store');
-        Route::put('vendors/{vendor:id}', [VendorAdminController::class, 'update'])->name('admin.vendors.update');
-        Route::delete('vendors/{vendor:id}', [VendorAdminController::class, 'destroy'])->name('admin.vendors.destroy');
-    });
+    Route::get('anggaran', [BudgetController::class, 'index'])->name('budget.index');
+    Route::post('anggaran/kategori', [BudgetController::class, 'storeCategory'])->name('budget.categories.store');
+    Route::put('anggaran/kategori/{category}', [BudgetController::class, 'updateCategory'])->name('budget.categories.update');
+    Route::delete('anggaran/kategori/{category}', [BudgetController::class, 'destroyCategory'])->name('budget.categories.destroy');
+    Route::post('anggaran/item', [BudgetController::class, 'storeItem'])->name('budget.items.store');
+    Route::put('anggaran/item/{item}', [BudgetController::class, 'updateItem'])->name('budget.items.update');
+    Route::delete('anggaran/item/{item}', [BudgetController::class, 'destroyItem'])->name('budget.items.destroy');
+    Route::post('anggaran/dana', [BudgetController::class, 'storeFunding'])->name('budget.funding.store');
+    Route::put('anggaran/dana/{funding}', [BudgetController::class, 'updateFunding'])->name('budget.funding.update');
+    Route::delete('anggaran/dana/{funding}', [BudgetController::class, 'destroyFunding'])->name('budget.funding.destroy');
+    Route::post('anggaran/pembayaran', [BudgetController::class, 'storePayment'])->name('budget.payments.store');
+    Route::put('anggaran/pembayaran/{payment}', [BudgetController::class, 'updatePayment'])->name('budget.payments.update');
+    Route::delete('anggaran/pembayaran/{payment}', [BudgetController::class, 'destroyPayment'])->name('budget.payments.destroy');
+
+    Route::get('timeline', [TaskController::class, 'index'])->name('timeline.index');
+    Route::post('timeline/tugas', [TaskController::class, 'store'])->name('tasks.store');
+    Route::put('timeline/tugas/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    Route::delete('timeline/tugas/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+
+    Route::get('vendor', [VendorController::class, 'index'])->name('vendors.index');
+    Route::post('vendor/slot', [VendorController::class, 'storeSlot'])->name('vendors.slots.store');
+    Route::get('vendor/slot/{slot}', [VendorController::class, 'show'])->name('vendors.show');
+    Route::put('vendor/slot/{slot}', [VendorController::class, 'updateSlot'])->name('vendors.slots.update');
+    Route::delete('vendor/slot/{slot}', [VendorController::class, 'destroySlot'])->name('vendors.slots.destroy');
+    Route::post('vendor/slot/{slot}/kandidat', [VendorController::class, 'storeCandidate'])->name('vendors.candidates.store');
+    Route::put('vendor/kandidat/{candidate}', [VendorController::class, 'updateCandidate'])->name('vendors.candidates.update');
+    Route::delete('vendor/kandidat/{candidate}', [VendorController::class, 'destroyCandidate'])->name('vendors.candidates.destroy');
+    Route::post('vendor/kandidat/{candidate}/pilih', [VendorController::class, 'choose'])->name('vendors.candidates.choose');
+    Route::post('vendor/kandidat/{candidate}/pertemuan', [VendorController::class, 'storeMeeting'])->name('vendors.meetings.store');
+    Route::delete('vendor/pertemuan/{meeting}', [VendorController::class, 'destroyMeeting'])->name('vendors.meetings.destroy');
+
+    Route::get('pengaturan/pernikahan', [WeddingSettingsController::class, 'edit'])->name('wedding.edit');
+    Route::put('pengaturan/pernikahan', [WeddingSettingsController::class, 'update'])->name('wedding.update');
+    Route::post('pengaturan/hari-h/pratinjau', [WeddingSettingsController::class, 'previewDate'])->name('wedding.date.preview');
+    Route::put('pengaturan/hari-h', [WeddingSettingsController::class, 'updateDate'])->name('wedding.date.update');
+    Route::post('pengaturan/undangan', [WeddingSettingsController::class, 'invite'])->middleware('throttle:10,1')->name('wedding.invite');
+    Route::delete('pengaturan/undangan/{invitation}', [WeddingSettingsController::class, 'revoke'])->name('wedding.invitation.revoke');
+    Route::delete('pengaturan/anggota/{member}', [WeddingSettingsController::class, 'removeMember'])->name('wedding.member.remove');
 });
 
 require __DIR__.'/settings.php';

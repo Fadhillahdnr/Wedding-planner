@@ -1,293 +1,250 @@
-import { Field } from '@/components/site/field';
+import { EmptyState } from '@/components/planner/empty-state';
+import { SectionHeading } from '@/components/planner/page-header';
+import { ProgressRule } from '@/components/planner/progress-rule';
+import { StatusBadge, type BudgetStatusValue } from '@/components/planner/status-badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { dateId, idr } from '@/lib/format';
-import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { bulan, relatif, rupiah, tanggal } from '@/lib/format';
+import { type BudgetPlan } from '@/types';
+import { Head, Link } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 
-interface EventT {
-    id: number;
-    title: string;
-    partner_name: string | null;
-    event_date: string | null;
-    venue: string | null;
-    guest_estimate: number | null;
-    budget_total: string;
-}
-interface TaskT {
+interface DatedItem {
     id: number;
     title: string;
     due_date: string | null;
-    is_done: boolean;
-}
-interface BudgetItemT {
-    id: number;
-    category: string;
-    name: string;
-    estimated: string;
-    actual: string;
-}
-interface Summary {
-    total: string;
-    estimated: string;
-    actual: string;
-    remaining: string;
-    over_budget: boolean;
 }
 
-const crumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
+interface Props {
+    wedding: {
+        couple: string;
+        target_date: string | null;
+        target_month: string | null;
+        estimated: boolean;
+        days_left: number | null;
+        guest_estimate: number | null;
+    };
+    budget: {
+        summary: {
+            projected_total: number;
+            agreed_total: number;
+            paid_total: number;
+            remaining_to_pay: number;
+            total_budget: number | null;
+            variance: number | null;
+            status_value: BudgetStatusValue;
+            status_label: string;
+        };
+        plan: BudgetPlan;
+        has_items: boolean;
+    };
+    attention: {
+        overdue: DatedItem[];
+        this_week: DatedItem[];
+        payments: { id: number; label: string; item: string | null; amount: number; due_date: string | null }[];
+        late_slots: { id: number; name: string }[];
+    };
+    phases: { number: number; name: string; done: number; total: number }[];
+}
 
-export default function Dashboard({
-    event,
-    tasks,
-    budgetItems,
-    budget,
-    bookingCount,
-}: {
-    event: EventT | null;
-    tasks: TaskT[];
-    budgetItems: BudgetItemT[];
-    budget: Summary | null;
-    bookingCount: number;
-}) {
-    const { auth } = usePage<SharedData>().props;
-    const done = tasks.filter((t) => t.is_done).length;
+/** Hitung mundur dalam satuan yang paling mudah dibayangkan; perkiraan diberi tanda "±". */
+function countdown(daysLeft: number, estimated: boolean) {
+    const prefix = estimated ? '±' : '';
+    if (daysLeft >= 60) return { value: `${prefix}${Math.round(daysLeft / 30.4)}`, unit: 'bulan lagi' };
+    if (daysLeft >= 14) return { value: `${prefix}${Math.round(daysLeft / 7)}`, unit: 'minggu lagi' };
+    if (daysLeft > 0) return { value: `${daysLeft}`, unit: 'hari lagi' };
+    if (daysLeft === 0) return { value: 'Hari ini', unit: '' };
+    return { value: `${-daysLeft}`, unit: 'hari sejak hari H' };
+}
+
+function savingsSentence(plan: BudgetPlan) {
+    if (plan.need === 0) return 'Dana yang terkumpul sudah mencukupi proyeksi saat ini.';
+    if (plan.required_per_month === null) return 'Tentukan tanggal atau perkiraan bulan hari H agar kebutuhan tabungan per bulan bisa dihitung.';
+    if (plan.event_passed) return `Masih ada ${rupiah(plan.need)} yang perlu disiapkan.`;
+    if (plan.on_track) return `Setoran ${rupiah(plan.planned_per_month)} per bulan sudah cukup; kebutuhannya ${rupiah(plan.required_per_month)}.`;
+    return `Butuh ${rupiah(plan.required_per_month)} per bulan, setoran sekarang ${rupiah(plan.planned_per_month)} — kurang ${rupiah(plan.shortfall_per_month)}.`;
+}
+
+export default function Dashboard({ wedding, budget, attention, phases }: Props) {
+    const { summary, plan } = budget;
+    const today = new Date().toISOString().slice(0, 10);
+    const currentPhase = phases.find((p) => p.total > 0 && p.done < p.total);
+    const count = wedding.days_left !== null ? countdown(wedding.days_left, wedding.estimated) : null;
+    const nothingPending = attention.overdue.length + attention.this_week.length + attention.payments.length + attention.late_slots.length === 0;
 
     return (
-        <AppLayout breadcrumbs={crumbs}>
-            <Head title="Dashboard" />
-            <div className="mx-auto w-full max-w-5xl space-y-10 p-5 lg:p-8">
-                <header>
-                    <h1 className="font-display text-4xl">Halo, {auth.user?.name}</h1>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                        {event ? `${event.title} · ${dateId(event.event_date)}` : 'Mulai dengan mengisi detail acara Anda.'} · {bookingCount} booking
-                    </p>
-                </header>
-                <EventForm event={event} />
-                {event ? (
-                    <>
-                        <Tasks tasks={tasks} done={done} />
-                        <Budget items={budgetItems} summary={budget!} />
-                    </>
-                ) : (
-                    <p className="text-muted-foreground border border-dashed p-10 text-center text-sm">
-                        Checklist dan anggaran akan muncul setelah detail acara disimpan.
-                    </p>
-                )}
+        <AppLayout>
+            <Head title="Ringkasan" />
+
+            <div className="space-y-16">
+                <section aria-labelledby="hari-h" className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+                    <div>
+                        <p className="text-ink-faint text-xs tracking-[0.14em] uppercase">{wedding.couple}</p>
+                        <h1 id="hari-h" className="sr-only">
+                            Ringkasan persiapan
+                        </h1>
+                        {count ? (
+                            <>
+                                <p className="font-display num mt-3 text-7xl leading-none font-medium sm:text-8xl">{count.value}</p>
+                                <p className="text-ink-soft mt-3 text-xl">{count.unit}</p>
+                                <p className="text-ink-faint mt-2 text-sm">
+                                    {wedding.estimated ? `Perkiraan ${bulan(wedding.target_month)}` : tanggal(wedding.target_date)}
+                                </p>
+                            </>
+                        ) : (
+                            <div className="mt-4">
+                                <EmptyState
+                                    title="Hari H belum diperkirakan"
+                                    action={
+                                        <Button asChild variant="outline">
+                                            <Link href="/pengaturan/pernikahan">Pilih perkiraan bulan</Link>
+                                        </Button>
+                                    }
+                                >
+                                    Dengan perkiraan bulan saja, countdown dan semua tenggat tugas sudah bisa dihitung.
+                                </EmptyState>
+                            </div>
+                        )}
+                    </div>
+
+                    {currentPhase && (
+                        <div>
+                            <p className="text-ink-faint text-xs tracking-[0.14em] uppercase">Fase sekarang</p>
+                            <p className="font-display mt-1 text-2xl">
+                                <span className="num text-ink-faint">{String(currentPhase.number).padStart(2, '0')}</span> {currentPhase.name}
+                            </p>
+                            <ProgressRule
+                                value={currentPhase.done}
+                                max={currentPhase.total}
+                                label={`Progres fase ${currentPhase.name}`}
+                                className="mt-3"
+                            />
+                            <p className="text-ink-soft num mt-2 text-sm">
+                                {currentPhase.done} dari {currentPhase.total} tugas selesai
+                            </p>
+                        </div>
+                    )}
+                </section>
+
+                <section aria-labelledby="uang">
+                    <SectionHeading
+                        id="uang"
+                        number="01"
+                        title="Uang"
+                        actions={
+                            <Button asChild variant="ghost" size="sm" className="h-11">
+                                <Link href="/anggaran">Buka anggaran</Link>
+                            </Button>
+                        }
+                    />
+
+                    {!budget.has_items && summary.projected_total === 0 ? (
+                        <EmptyState
+                            title="Belum ada angka untuk dihitung"
+                            action={
+                                <Button asChild variant="outline">
+                                    <Link href="/anggaran">Isi estimasi pertama</Link>
+                                </Button>
+                            }
+                        >
+                            Mulai dengan perkiraan jumlah tamu atau estimasi venue; ringkasan ini akan terisi dari angka yang kalian masukkan.
+                        </EmptyState>
+                    ) : (
+                        <>
+                            <dl className="divide-line grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                                {[
+                                    ['Proyeksi total', summary.projected_total, 'Estimasi + kesepakatan + dana tak terduga'],
+                                    ['Sudah disepakati', summary.agreed_total, 'Harga yang sudah dikunci dengan vendor'],
+                                    ['Sudah dibayar', summary.paid_total, `Sisa pembayaran ${rupiah(summary.remaining_to_pay)}`],
+                                ].map(([label, value, note]) => (
+                                    <div key={label as string} className="py-4 sm:px-6 sm:py-0 sm:first:pl-0 sm:last:pr-0">
+                                        <dt className="text-ink-faint text-xs tracking-[0.14em] uppercase">{label}</dt>
+                                        <dd className="num font-display mt-1 text-3xl font-medium">{rupiah(value as number)}</dd>
+                                        <p className="text-ink-soft mt-1 text-sm">{note}</p>
+                                    </div>
+                                ))}
+                            </dl>
+
+                            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                                <StatusBadge status={summary.status_value} label={summary.status_label} />
+                                {summary.total_budget !== null && summary.variance !== null && (
+                                    <p className="text-ink-soft text-sm">
+                                        {summary.variance >= 0
+                                            ? `Sisa ruang dari anggaran ${rupiah(summary.total_budget)}: ${rupiah(summary.variance)}.`
+                                            : `Melebihi anggaran ${rupiah(summary.total_budget)} sebesar ${rupiah(-summary.variance)}.`}
+                                    </p>
+                                )}
+                            </div>
+                            <p className="mt-4 max-w-prose">{savingsSentence(plan)}</p>
+                            {plan.meet_date && plan.need > 0 && (
+                                <p className="text-ink-soft mt-1 text-sm">
+                                    Dengan setoran sekarang, dana mencukupi sekitar {bulan(plan.meet_date.slice(0, 7))}
+                                    {plan.meets_before_event === false ? ' — setelah hari H.' : '.'}
+                                </p>
+                            )}
+                        </>
+                    )}
+                </section>
+
+                <section aria-labelledby="perhatian">
+                    <SectionHeading id="perhatian" number="02" title="Perlu perhatian" />
+
+                    {nothingPending ? (
+                        <p className="text-ink-soft">Tidak ada yang terlambat atau jatuh tempo dalam waktu dekat.</p>
+                    ) : (
+                        <ul className="divide-line divide-y">
+                            {attention.overdue.map((t) => (
+                                <li key={`o${t.id}`} className="flex flex-wrap justify-between gap-2 py-3">
+                                    <span>{t.title}</span>
+                                    <span className="text-danger text-sm">{relatif(t.due_date, today)}</span>
+                                </li>
+                            ))}
+                            {attention.payments.map((p) => (
+                                <li key={`p${p.id}`} className="flex flex-wrap justify-between gap-2 py-3">
+                                    <span>
+                                        {p.label}
+                                        {p.item ? ` — ${p.item}` : ''} <span className="num text-ink-soft">({rupiah(p.amount)})</span>
+                                    </span>
+                                    <span className="text-amber num text-sm">{relatif(p.due_date, today)}</span>
+                                </li>
+                            ))}
+                            {attention.late_slots.map((s) => (
+                                <li key={`s${s.id}`} className="flex flex-wrap justify-between gap-2 py-3">
+                                    <Link href={`/vendor/slot/${s.id}`} className="underline underline-offset-4">
+                                        {s.name}
+                                    </Link>
+                                    <span className="text-amber text-sm">belum dipilih, sudah lewat waktu idealnya</span>
+                                </li>
+                            ))}
+                            {attention.this_week.map((t) => (
+                                <li key={`w${t.id}`} className="flex flex-wrap justify-between gap-2 py-3">
+                                    <span>{t.title}</span>
+                                    <span className="text-ink-soft text-sm">{relatif(t.due_date, today)}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+
+                <section aria-labelledby="pintasan">
+                    <h2 id="pintasan" className="sr-only">
+                        Pintasan
+                    </h2>
+                    <div className="flex flex-wrap gap-3">
+                        <Button asChild size="lg" className="h-12">
+                            <Link href="/vendor">
+                                <Plus className="size-4" strokeWidth={1.5} aria-hidden="true" /> Tambah kandidat vendor
+                            </Link>
+                        </Button>
+                        <Button asChild size="lg" variant="outline" className="h-12">
+                            <Link href="/anggaran#pembayaran">Catat pembayaran</Link>
+                        </Button>
+                        <Button asChild size="lg" variant="outline" className="h-12">
+                            <Link href="/timeline#tambah">Tambah tugas</Link>
+                        </Button>
+                    </div>
+                </section>
             </div>
         </AppLayout>
-    );
-}
-
-function EventForm({ event }: { event: EventT | null }) {
-    const { data, setData, put, processing, errors } = useForm({
-        title: event?.title ?? '',
-        partner_name: event?.partner_name ?? '',
-        event_date: event?.event_date?.slice(0, 10) ?? '',
-        venue: event?.venue ?? '',
-        guest_estimate: event?.guest_estimate?.toString() ?? '',
-        budget_total: event?.budget_total ?? '0',
-    });
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-        put('/dashboard/event', { preserveScroll: true });
-    };
-    const b = (k: keyof typeof data) => ({
-        name: k,
-        value: data[k],
-        error: errors[k],
-        onChange: (e: React.ChangeEvent<HTMLInputElement>) => setData(k, e.target.value),
-    });
-
-    return (
-        <section aria-labelledby="acara" className="bg-card border p-6">
-            <h2 id="acara" className="font-display text-2xl">
-                Detail acara
-            </h2>
-            <form onSubmit={submit} className="mt-5 grid gap-5 sm:grid-cols-2" noValidate>
-                <Field label="Nama acara" required {...b('title')} />
-                <Field label="Nama pasangan" {...b('partner_name')} />
-                <Field label="Tanggal" type="date" {...b('event_date')} />
-                <Field label="Lokasi" {...b('venue')} />
-                <Field label="Estimasi tamu" type="number" min={1} {...b('guest_estimate')} />
-                <Field label="Total anggaran (Rp)" type="number" min={0} required {...b('budget_total')} />
-                <div className="sm:col-span-2">
-                    <Button type="submit" disabled={processing}>
-                        Simpan
-                    </Button>
-                </div>
-            </form>
-        </section>
-    );
-}
-
-function Tasks({ tasks, done }: { tasks: TaskT[]; done: number }) {
-    const { data, setData, post, processing, reset, errors } = useForm({ title: '', due_date: '' });
-    const add: FormEventHandler = (e) => {
-        e.preventDefault();
-        post('/dashboard/tasks', { preserveScroll: true, onSuccess: () => reset() });
-    };
-
-    return (
-        <section aria-labelledby="tugas" className="bg-card border p-6">
-            <h2 id="tugas" className="font-display text-2xl">
-                Checklist{' '}
-                <span className="text-muted-foreground text-base">
-                    ({done}/{tasks.length})
-                </span>
-            </h2>
-            <form onSubmit={add} className="mt-5 flex flex-wrap items-end gap-3">
-                <div className="min-w-48 flex-1">
-                    <Field
-                        label="Tugas baru"
-                        name="title"
-                        value={data.title}
-                        error={errors.title}
-                        onChange={(e) => setData('title', e.target.value)}
-                    />
-                </div>
-                <Field label="Tenggat" name="due_date" type="date" value={data.due_date} onChange={(e) => setData('due_date', e.target.value)} />
-                <Button type="submit" disabled={processing}>
-                    Tambah
-                </Button>
-            </form>
-            {tasks.length === 0 ? (
-                <p className="text-muted-foreground mt-6 text-sm">Belum ada tugas.</p>
-            ) : (
-                <ul className="mt-6 divide-y">
-                    {tasks.map((t) => (
-                        <li key={t.id} className="flex items-center gap-3 py-3">
-                            <input
-                                id={`t${t.id}`}
-                                type="checkbox"
-                                checked={t.is_done}
-                                onChange={() => router.patch(`/dashboard/tasks/${t.id}`, {}, { preserveScroll: true })}
-                                className="size-5 accent-[var(--sage)]"
-                            />
-                            <label htmlFor={`t${t.id}`} className={`flex-1 text-sm ${t.is_done ? 'text-muted-foreground line-through' : ''}`}>
-                                {t.title}
-                                {t.due_date && <span className="text-muted-foreground"> · {dateId(t.due_date)}</span>}
-                            </label>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`Hapus tugas ${t.title}`}
-                                onClick={() => router.delete(`/dashboard/tasks/${t.id}`, { preserveScroll: true })}
-                            >
-                                <Trash2 className="size-4" />
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </section>
-    );
-}
-
-function Budget({ items, summary }: { items: BudgetItemT[]; summary: Summary }) {
-    const { data, setData, post, processing, reset, errors } = useForm({ category: '', name: '', estimated: '', actual: '' });
-    const add: FormEventHandler = (e) => {
-        e.preventDefault();
-        post('/dashboard/budget', { preserveScroll: true, onSuccess: () => reset() });
-    };
-    const stat = (l: string, v: string, bad = false) => (
-        <div>
-            <dt className="text-muted-foreground text-xs tracking-widest uppercase">{l}</dt>
-            <dd className={`font-display text-2xl ${bad ? 'text-destructive' : ''}`}>{idr(v)}</dd>
-        </div>
-    );
-
-    return (
-        <section aria-labelledby="anggaran" className="bg-card border p-6">
-            <h2 id="anggaran" className="font-display text-2xl">
-                Anggaran
-            </h2>
-            <dl className="mt-5 grid grid-cols-2 gap-5 lg:grid-cols-4">
-                {stat('Total', summary.total)}
-                {stat('Estimasi', summary.estimated)}
-                {stat('Realisasi', summary.actual)}
-                {stat(summary.over_budget ? 'Melebihi anggaran' : 'Sisa', summary.remaining, summary.over_budget)}
-            </dl>
-            <form onSubmit={add} className="mt-6 grid gap-3 sm:grid-cols-5 sm:items-end">
-                <Field
-                    label="Kategori"
-                    name="category"
-                    required
-                    value={data.category}
-                    error={errors.category}
-                    onChange={(e) => setData('category', e.target.value)}
-                />
-                <Field label="Item" name="name" required value={data.name} error={errors.name} onChange={(e) => setData('name', e.target.value)} />
-                <Field
-                    label="Estimasi"
-                    name="estimated"
-                    type="number"
-                    min={0}
-                    required
-                    value={data.estimated}
-                    error={errors.estimated}
-                    onChange={(e) => setData('estimated', e.target.value)}
-                />
-                <Field
-                    label="Realisasi"
-                    name="actual"
-                    type="number"
-                    min={0}
-                    value={data.actual}
-                    onChange={(e) => setData('actual', e.target.value)}
-                />
-                <Button type="submit" disabled={processing}>
-                    Tambah
-                </Button>
-            </form>
-            {items.length === 0 ? (
-                <p className="text-muted-foreground mt-6 text-sm">Belum ada item anggaran.</p>
-            ) : (
-                <div className="mt-6 overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <caption className="sr-only">Rincian anggaran</caption>
-                        <thead className="text-muted-foreground text-xs uppercase">
-                            <tr>
-                                <th scope="col" className="py-2">
-                                    Kategori
-                                </th>
-                                <th scope="col">Item</th>
-                                <th scope="col" className="text-right">
-                                    Estimasi
-                                </th>
-                                <th scope="col" className="text-right">
-                                    Realisasi
-                                </th>
-                                <th scope="col">
-                                    <span className="sr-only">Aksi</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {items.map((i) => (
-                                <tr key={i.id}>
-                                    <td className="py-3">{i.category}</td>
-                                    <td>{i.name}</td>
-                                    <td className="text-right">{idr(i.estimated)}</td>
-                                    <td className="text-right">{idr(i.actual)}</td>
-                                    <td className="text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            aria-label={`Hapus ${i.name}`}
-                                            onClick={() => router.delete(`/dashboard/budget/${i.id}`, { preserveScroll: true })}
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </section>
     );
 }

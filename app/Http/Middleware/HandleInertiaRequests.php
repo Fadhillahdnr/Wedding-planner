@@ -38,10 +38,11 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             ...parent::share($request),
             'name' => config('app.name'),
-            'site' => config('site'),
             'auth' => [
-                'user' => $request->user()?->only('id', 'name', 'email', 'role', 'email_verified_at'),
+                'user' => $request->user()?->only('id', 'name', 'email'),
+                'is_owner' => (bool) $request->user()?->isOwner(),
             ],
+            'couple' => fn () => $request->user()?->wedding()?->coupleLabel(),
             'flash' => ['success' => fn () => $request->session()->get('success')],
         ]);
     }

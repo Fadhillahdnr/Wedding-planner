@@ -2,51 +2,62 @@
 
 namespace App\Models;
 
-use App\Enums\Role;
+use App\Enums\MemberRole;
 use Database\Factories\UserFactory;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /** `role` sengaja tidak mass-assignable agar tidak bisa di-escalate lewat request. */
-    protected $fillable = ['name', 'email', 'phone', 'password'];
+    protected $fillable = ['name', 'email', 'password'];
 
     protected $hidden = ['password', 'remember_token'];
+
+    private ?WeddingMember $cachedMembership = null;
+
+    private bool $membershipResolved = false;
 
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'role' => Role::class,
         ];
     }
 
-    public function isAdmin(): bool
+    public function membership(): HasOne
     {
-        return $this->role === Role::Admin;
+        return $this->hasOne(WeddingMember::class);
     }
 
-    /** Admin atau staff dapat mengelola operasional. */
-    public function isStaff(): bool
+    /** Dimuat eksplisit (bukan lazy-load relasi) dan disimpan per instance karena dipakai di tiap query ber-scope. */
+    private function resolveMembership(): ?WeddingMember
     {
-        return in_array($this->role, [Role::Admin, Role::Staff], true);
+        if (! $this->membershipResolved) {
+            $this->cachedMembership = WeddingMember::query()->with('wedding')->where('user_id', $this->id)->first();
+            $this->membershipResolved = true;
+        }
+
+        return $this->cachedMembership;
     }
 
-    public function events(): HasMany
+    public function wedding(): ?Wedding
     {
-        return $this->hasMany(Event::class);
+        return $this->resolveMembership()?->wedding;
     }
 
-    public function bookings(): HasMany
+    public function weddingId(): ?int
     {
-        return $this->hasMany(Booking::class);
+        return $this->resolveMembership()?->wedding_id;
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->resolveMembership()?->role === MemberRole::Owner;
     }
 }
