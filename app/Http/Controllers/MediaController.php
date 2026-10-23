@@ -21,13 +21,19 @@ class MediaController extends Controller
         $data = $request->validate([
             'target' => ['required', Rule::in(array_keys(config('media.targets')))],
             'target_id' => ['required', 'integer'],
+            'resource_type' => ['nullable', Rule::in(['image', 'video'])],
         ]);
+        $resourceType = $data['resource_type'] ?? 'image';
 
         if (! $this->storage->isConfigured()) {
             return response()->json(['message' => 'Penyimpanan media belum dikonfigurasi.'], 503);
         }
 
         $config = config("media.targets.{$data['target']}");
+        $formats = $resourceType === 'video' ? ($config['video_formats'] ?? null) : $config['formats'];
+        if ($formats === null) {
+            return response()->json(['message' => 'Target ini tidak menerima video.'], 422);
+        }
         // Model memakai scope wedding_id: ID milik workspace lain → 404.
         $target = $config['model']::findOrFail($data['target_id']);
 
@@ -42,8 +48,8 @@ class MediaController extends Controller
             'uploaded_by' => $request->user()->id,
             'provider' => 'cloudinary',
             'public_id' => $publicId,
-            'kind' => 'photo',
-            'resource_type' => 'image',
+            'kind' => $resourceType === 'video' ? 'video' : 'photo',
+            'resource_type' => $resourceType,
             'delivery_type' => 'authenticated',
             'status' => 'pending',
         ]);
@@ -52,7 +58,7 @@ class MediaController extends Controller
 
         return response()->json([
             'asset_id' => $asset->id,
-            'upload' => $this->storage->signUpload($publicId, $config['formats']),
+            'upload' => $this->storage->signUpload($publicId, $formats, $resourceType),
         ]);
     }
 
@@ -78,6 +84,14 @@ class MediaController extends Controller
         return redirect()->away($this->storage->url($asset))->header('Cache-Control', 'private, max-age=300');
     }
 
+    /** Gambar sampul video (bingkai pertama), dengan otorisasi yang sama seperti `show`. */
+    public function poster(MediaAsset $asset): RedirectResponse
+    {
+        abort_unless($asset->status === 'ready' && $asset->kind === 'video', 404);
+
+        return redirect()->away($this->storage->posterUrl($asset))->header('Cache-Control', 'private, max-age=300');
+    }
+
     public function destroy(MediaAsset $asset, ActivityLogger $log): JsonResponse|RedirectResponse
     {
         if (! $this->library->purge($asset)) {
@@ -94,7 +108,7 @@ class MediaController extends Controller
     {
         foreach (config('media.targets') as $config) {
             if ((new $config['model'])->getMorphClass() === $asset->mediable_type) {
-                return $config['formats'];
+                return $asset->resource_type === 'video' ? ($config['video_formats'] ?? []) : $config['formats'];
             }
         }
 

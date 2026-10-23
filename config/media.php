@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Memory;
 use App\Models\VendorCandidate;
 use App\Models\VendorMeeting;
 
@@ -18,7 +19,9 @@ return [
 
     'root_folder' => env('CLOUDINARY_ROOT_FOLDER', 'wedding-planner'),
 
+    // Batas SESUDAH kompresi di browser (sama dengan batas paket gratis Cloudinary: gambar 10 MB, video 100 MB).
     'max_bytes' => (int) env('MEDIA_MAX_BYTES', 10 * 1024 * 1024),
+    'video_max_bytes' => (int) env('MEDIA_VIDEO_MAX_BYTES', 100 * 1024 * 1024),
     'max_per_item' => (int) env('MEDIA_MAX_PER_ITEM', 20),
 
     // Berapa jam aset berstatus `pending` (belum dikonfirmasi) dipertahankan sebelum dibersihkan.
@@ -31,11 +34,17 @@ return [
     'targets' => [
         'vendor_meeting' => [
             'model' => VendorMeeting::class,
-            'formats' => ['jpg', 'jpeg', 'png', 'webp'],
+            'formats' => ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
+        ],
+        'memory' => [
+            'model' => Memory::class,
+            'formats' => ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
+            // Hanya target yang punya `video_formats` yang menerima video.
+            'video_formats' => ['mp4', 'mov', 'webm'],
         ],
         'vendor_candidate' => [
             'model' => VendorCandidate::class,
-            'formats' => ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+            'formats' => ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'pdf'],
         ],
     ],
 ];

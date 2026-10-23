@@ -16,7 +16,7 @@ class CloudinaryService implements MediaStorage
         return filled(config('media.cloud_name')) && filled(config('media.api_key')) && filled(config('media.api_secret'));
     }
 
-    public function signUpload(string $publicId, array $formats): array
+    public function signUpload(string $publicId, array $formats, string $resourceType = 'image'): array
     {
         $params = [
             'allowed_formats' => implode(',', $formats),
@@ -28,15 +28,15 @@ class CloudinaryService implements MediaStorage
         $signature = ApiUtils::signParameters($params, config('media.api_secret'));
 
         return [
-            'url' => 'https://api.cloudinary.com/v1_1/'.config('media.cloud_name').'/image/upload',
+            'url' => 'https://api.cloudinary.com/v1_1/'.config('media.cloud_name').'/'.$resourceType.'/upload',
             'fields' => $params + ['api_key' => config('media.api_key'), 'signature' => $signature],
         ];
     }
 
-    public function inspect(string $publicId): ?array
+    public function inspect(string $publicId, string $resourceType = 'image'): ?array
     {
         try {
-            $asset = $this->client()->adminApi()->asset($publicId, ['type' => 'authenticated', 'resource_type' => 'image']);
+            $asset = $this->client()->adminApi()->asset($publicId, ['type' => 'authenticated', 'resource_type' => $resourceType]);
         } catch (NotFound) {
             return null;
         }
@@ -49,22 +49,39 @@ class CloudinaryService implements MediaStorage
         ];
     }
 
-    public function delete(string $publicId): bool
+    public function delete(string $publicId, string $resourceType = 'image'): bool
     {
-        $result = $this->client()->uploadApi()->destroy($publicId, ['type' => 'authenticated', 'resource_type' => 'image', 'invalidate' => true]);
+        $result = $this->client()->uploadApi()->destroy($publicId, ['type' => 'authenticated', 'resource_type' => $resourceType, 'invalidate' => true]);
 
         return in_array($result['result'] ?? null, ['ok', 'not found'], true);
     }
 
     public function url(MediaAsset $asset): string
     {
+        if ($asset->resource_type === 'video') {
+            // Sumber .mov/.webm dikirim sebagai MP4 (H.264) supaya Chrome/Firefox/Safari bisa memutarnya.
+            $video = $this->client()->video($asset->public_id)->deliveryType('authenticated')->signUrl(true)->extension('mp4');
+
+            return (string) $video->toUrl();
+        }
+
         $image = $this->client()->image($asset->public_id)->deliveryType('authenticated')->signUrl(true);
 
         if ($asset->format) {
-            $image->extension($asset->format);
+            // HEIC/HEIF tidak bisa ditampilkan browser selain Safari, jadi dikirim sebagai JPEG.
+            $image->extension(in_array($asset->format, ['heic', 'heif'], true) ? 'jpg' : $asset->format);
         }
 
         return (string) $image->toUrl();
+    }
+
+    public function posterUrl(MediaAsset $asset): string
+    {
+        $poster = $this->client()->video($asset->public_id)->deliveryType('authenticated')->signUrl(true)
+            ->addTransformation('so_0,w_960,c_limit')
+            ->extension('jpg');
+
+        return (string) $poster->toUrl();
     }
 
     private function client(): Cloudinary

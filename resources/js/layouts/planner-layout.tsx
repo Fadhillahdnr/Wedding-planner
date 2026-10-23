@@ -10,7 +10,7 @@ import {
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { CalendarRange, House, LogOut, Settings2, Store, UserRound, Wallet } from 'lucide-react';
+import { CalendarRange, House, Images, LogOut, Mail, Settings2, Store, UserRound, Wallet } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 
 const nav = [
@@ -18,6 +18,8 @@ const nav = [
     { title: 'Anggaran', href: '/anggaran', icon: Wallet },
     { title: 'Timeline', href: '/timeline', icon: CalendarRange },
     { title: 'Vendor', href: '/vendor', icon: Store },
+    { title: 'Kenangan', href: '/kenangan', icon: Images },
+    { title: 'Catatan', href: '/catatan', icon: Mail },
 ];
 
 function isActive(url: string, href: string) {
@@ -115,7 +117,7 @@ export default function PlannerLayout({ children }: { children: ReactNode }) {
             </main>
 
             <nav aria-label="Navigasi bawah" className="border-line bg-paper fixed inset-x-0 bottom-0 z-30 border-t md:hidden">
-                <ul className="grid grid-cols-4">
+                <ul className="grid grid-cols-6">
                     {nav.map((item) => {
                         const active = isActive(url, item.href);
                         return (
@@ -124,7 +126,7 @@ export default function PlannerLayout({ children }: { children: ReactNode }) {
                                     href={item.href}
                                     aria-current={active ? 'page' : undefined}
                                     className={cn(
-                                        'flex min-h-16 flex-col items-center justify-center gap-1 text-xs',
+                                        'flex min-h-16 flex-col items-center justify-center gap-1 text-[11px]',
                                         active ? 'text-brand font-medium' : 'text-ink-soft',
                                     )}
                                 >

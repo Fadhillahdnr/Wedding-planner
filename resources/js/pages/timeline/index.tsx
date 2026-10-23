@@ -162,7 +162,7 @@ export default function Timeline({ tasks, phases, members, slots, today, templat
                             onClick={() => setView(v.value)}
                             className={cn(
                                 'ease-calm min-h-11 rounded px-5 text-sm transition-colors duration-150',
-                                view === v.value ? 'bg-brand text-primary-foreground' : 'text-ink-soft hover:text-ink',
+                                view === v.value ? 'bg-primary text-primary-foreground' : 'text-ink-soft hover:text-ink',
                             )}
                         >
                             {v.label}

@@ -27,6 +27,7 @@ export interface SharedData {
     auth: Auth;
     couple: string | null;
     flash: { success: string | null };
+    media: { max_bytes: number; video_max_bytes: number };
     [key: string]: unknown;
 }
 
@@ -128,7 +129,7 @@ export interface CriterionData {
 
 export interface MediaItem {
     id: number;
-    kind: 'photo' | 'document';
+    kind: 'photo' | 'video' | 'document';
     format: string | null;
     bytes: number;
 }

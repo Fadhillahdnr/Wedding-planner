@@ -1,13 +1,15 @@
 import { EmptyState } from '@/components/planner/empty-state';
+import { LiveCountdown } from '@/components/planner/live-countdown';
 import { SectionHeading } from '@/components/planner/page-header';
 import { ProgressRule } from '@/components/planner/progress-rule';
 import { StatusBadge, type BudgetStatusValue } from '@/components/planner/status-badge';
+import { WorldStage } from '@/components/three/world-stage';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { bulan, relatif, rupiah, tanggal } from '@/lib/format';
 import { type BudgetPlan } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Mail, Plus } from 'lucide-react';
 
 interface DatedItem {
     id: number;
@@ -19,6 +21,7 @@ interface Props {
     wedding: {
         couple: string;
         target_date: string | null;
+        target_at: string | null;
         target_month: string | null;
         estimated: boolean;
         days_left: number | null;
@@ -45,6 +48,8 @@ interface Props {
         late_slots: { id: number; name: string }[];
     };
     phases: { number: number; name: string; done: number; total: number }[];
+    memories: { id: number; title: string; happened_on: string | null; photo_id: number | null }[];
+    partner_note: { title: string; body: string; author: string } | null;
 }
 
 /** Hitung mundur dalam satuan yang paling mudah dibayangkan; perkiraan diberi tanda "±". */
@@ -65,7 +70,15 @@ function savingsSentence(plan: BudgetPlan) {
     return `Butuh ${rupiah(plan.required_per_month)} per bulan, setoran sekarang ${rupiah(plan.planned_per_month)} — kurang ${rupiah(plan.shortfall_per_month)}.`;
 }
 
-export default function Dashboard({ wedding, budget, attention, phases }: Props) {
+const worldLinks = [
+    { href: '/timeline', label: 'Timeline' },
+    { href: '/timeline#tambah', label: 'Tugas' },
+    { href: '/kenangan', label: 'Kenangan' },
+    { href: '/anggaran', label: 'Anggaran' },
+    { href: '/catatan', label: 'Catatan' },
+];
+
+export default function Dashboard({ wedding, budget, attention, phases, memories, partner_note }: Props) {
     const { summary, plan } = budget;
     const today = new Date().toISOString().slice(0, 10);
     const currentPhase = phases.find((p) => p.total > 0 && p.done < p.total);
@@ -77,22 +90,29 @@ export default function Dashboard({ wedding, budget, attention, phases }: Props)
             <Head title="Ringkasan" />
 
             <div className="space-y-16">
-                <section aria-labelledby="hari-h" className="grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+                <section aria-labelledby="hari-h" className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
                     <div>
                         <p className="text-ink-faint text-xs tracking-[0.14em] uppercase">{wedding.couple}</p>
-                        <h1 id="hari-h" className="sr-only">
-                            Ringkasan persiapan
+                        <h1 id="hari-h" className="mt-3 text-4xl leading-tight font-medium sm:text-5xl">
+                            Cerita kita, sedikit demi sedikit.
                         </h1>
-                        {count ? (
-                            <>
-                                <p className="font-display num mt-3 text-7xl leading-none font-medium sm:text-8xl">{count.value}</p>
-                                <p className="text-ink-soft mt-3 text-xl">{count.unit}</p>
-                                <p className="text-ink-faint mt-2 text-sm">
-                                    {wedding.estimated ? `Perkiraan ${bulan(wedding.target_month)}` : tanggal(wedding.target_date)}
-                                </p>
-                            </>
-                        ) : (
-                            <div className="mt-4">
+                        <p className="text-ink-soft mt-3 max-w-prose">
+                            Setiap rencana kecil membawa kita lebih dekat ke hari yang paling kita tunggu.
+                        </p>
+
+                        <div className="mt-8">
+                            {wedding.target_at ? (
+                                <>
+                                    <LiveCountdown targetAt={wedding.target_at} />
+                                    <p className="text-ink-faint mt-3 text-sm">{tanggal(wedding.target_date)}</p>
+                                </>
+                            ) : count ? (
+                                <>
+                                    <p className="font-display num text-6xl leading-none font-medium">{count.value}</p>
+                                    <p className="text-ink-soft mt-2 text-lg">{count.unit}</p>
+                                    <p className="text-ink-faint mt-1 text-sm">Perkiraan {bulan(wedding.target_month)}</p>
+                                </>
+                            ) : (
                                 <EmptyState
                                     title="Hari H belum diperkirakan"
                                     action={
@@ -103,27 +123,33 @@ export default function Dashboard({ wedding, budget, attention, phases }: Props)
                                 >
                                     Dengan perkiraan bulan saja, countdown dan semua tenggat tugas sudah bisa dihitung.
                                 </EmptyState>
+                            )}
+                        </div>
+
+                        {currentPhase && (
+                            <div className="mt-8 max-w-sm">
+                                <p className="text-ink-faint text-xs tracking-[0.14em] uppercase">Fase sekarang</p>
+                                <p className="font-display mt-1 text-xl">
+                                    <span className="num text-ink-faint">{String(currentPhase.number).padStart(2, '0')}</span> {currentPhase.name}
+                                </p>
+                                <ProgressRule
+                                    value={currentPhase.done}
+                                    max={currentPhase.total}
+                                    label={`Progres fase ${currentPhase.name}`}
+                                    className="mt-3"
+                                />
+                                <p className="text-ink-soft num mt-2 text-sm">
+                                    {currentPhase.done} dari {currentPhase.total} tugas selesai
+                                </p>
                             </div>
                         )}
+
+                        <Button asChild size="lg" className="mt-8 h-12">
+                            <Link href="/timeline">Lanjutkan merencanakan</Link>
+                        </Button>
                     </div>
 
-                    {currentPhase && (
-                        <div>
-                            <p className="text-ink-faint text-xs tracking-[0.14em] uppercase">Fase sekarang</p>
-                            <p className="font-display mt-1 text-2xl">
-                                <span className="num text-ink-faint">{String(currentPhase.number).padStart(2, '0')}</span> {currentPhase.name}
-                            </p>
-                            <ProgressRule
-                                value={currentPhase.done}
-                                max={currentPhase.total}
-                                label={`Progres fase ${currentPhase.name}`}
-                                className="mt-3"
-                            />
-                            <p className="text-ink-soft num mt-2 text-sm">
-                                {currentPhase.done} dari {currentPhase.total} tugas selesai
-                            </p>
-                        </div>
-                    )}
+                    <WorldStage links={worldLinks} />
                 </section>
 
                 <section aria-labelledby="uang">
@@ -223,6 +249,62 @@ export default function Dashboard({ wedding, budget, attention, phases }: Props)
                                 </li>
                             ))}
                         </ul>
+                    )}
+                </section>
+
+                <section aria-labelledby="cerita">
+                    <SectionHeading
+                        id="cerita"
+                        number="03"
+                        title="Cerita yang sudah kita susun"
+                        actions={
+                            <Button asChild variant="ghost" size="sm" className="h-11">
+                                <Link href="/kenangan">Buka kenangan</Link>
+                            </Button>
+                        }
+                    />
+                    {memories.length === 0 ? (
+                        <EmptyState
+                            title="Belum ada kenangan"
+                            action={
+                                <Button asChild variant="outline">
+                                    <Link href="/kenangan">Simpan kenangan pertama</Link>
+                                </Button>
+                            }
+                        >
+                            Tulis momen kecil yang ingin kalian ingat, lalu tambahkan fotonya.
+                        </EmptyState>
+                    ) : (
+                        <ul className="grid gap-6 sm:grid-cols-3">
+                            {memories.map((m) => (
+                                <li key={m.id}>
+                                    <Link href="/kenangan" className="group block">
+                                        <div className="bg-sunk aspect-[4/3] overflow-hidden rounded-md">
+                                            {m.photo_id && (
+                                                <img
+                                                    src={`/media/${m.photo_id}`}
+                                                    alt={`Foto kenangan: ${m.title}`}
+                                                    loading="lazy"
+                                                    className="size-full object-cover"
+                                                />
+                                            )}
+                                        </div>
+                                        <p className="font-display mt-2 text-lg group-hover:underline">{m.title}</p>
+                                        {m.happened_on && <p className="text-ink-faint text-sm">{tanggal(m.happened_on)}</p>}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
+                    {partner_note && (
+                        <figure className="border-line mt-8 max-w-prose border-l-2 pl-5">
+                            <Mail className="text-brand mb-2 size-4" strokeWidth={1.5} aria-hidden="true" />
+                            <blockquote className="font-display text-xl">{partner_note.body}</blockquote>
+                            <figcaption className="text-ink-faint mt-2 text-sm">
+                                {partner_note.title} — dari {partner_note.author}
+                            </figcaption>
+                        </figure>
                     )}
                 </section>
 

@@ -28,6 +28,14 @@
     --color-brand: var(--brand);
     --color-brand-soft: var(--brand-soft);
 
+    /* Palet "Our Little World" (docs/OUR_LITTLE_WORLD.md): hanya untuk landing & dunia 3D. */
+    --color-coral: #f29191;
+    --color-blush: #f7adad;
+    --color-aqua: #b1e5e5;
+    --color-mint: #ccfbfa;
+    --color-ivory: #fff9f5;
+    --color-plum: #49343d;
+
     --ease-calm: cubic-bezier(0.2, 0.7, 0.2, 1);
 
     --radius-lg: var(--radius);
@@ -98,22 +106,24 @@
 
 /* Token sumber kebenaran: design-system/wedding-planner-pribadi/MASTER.md */
 :root {
-    --paper: #f7f2e9;
-    --card: #fcf9f3;
-    --sunk: #efe7d9;
-    --ink: #2a2420;
-    --ink-soft: #5a4f46;
-    --ink-faint: #6f6359;
-    --line: #ddd2c0;
-    --line-strong: #8f8271;
-    --brand: #9a3f27;
-    --brand-soft: #f0dcd2;
-    --sage: #44604a;
-    --sage-soft: #e1e8dc;
-    --amber: #7a5200;
-    --amber-soft: #f3e5c3;
-    --danger: #a12b2b;
-    --danger-soft: #f4d9d6;
+    /* Palet Color Hunt: coral #F29191, blush #F7ADAD, aqua #B1E5E5, mint #CCFBFA + ivory #FFF9F5 & plum #49343D. */
+    --paper: #fff9f5;
+    --card: #fffdfb;
+    --sunk: #e6f7f6;
+    --ink: #49343d;
+    --ink-soft: #645059;
+    --ink-faint: #765f6a;
+    --line: #ecdad8;
+    --line-strong: #8c7480;
+    /* Coral murni (#F29191) terlalu terang untuk teks; --brand adalah versi gelapnya untuk tautan/aktif. Tombol utama memakai coral asli (--primary). */
+    --brand: #b04545;
+    --brand-soft: #fce4e2;
+    --sage: #2b6a6a;
+    --sage-soft: #d9f6f5;
+    --amber: #85541a;
+    --amber-soft: #fbebd3;
+    --danger: #b03040;
+    --danger-soft: #fce0e0;
 
     /* Pemetaan ke nama variabel shadcn agar komponen bawaan ikut tema. */
     --background: var(--paper);
@@ -121,29 +131,29 @@
     --card-foreground: var(--ink);
     --popover: var(--card);
     --popover-foreground: var(--ink);
-    --primary: var(--brand);
+    --primary: var(--color-coral);
     --accent: var(--sunk);
-    --primary-foreground: #fcf9f3;
+    --primary-foreground: var(--color-plum);
     --secondary: var(--sunk);
     --secondary-foreground: var(--ink);
     --muted: var(--sunk);
     --muted-foreground: var(--ink-soft);
     --accent-foreground: var(--ink);
     --destructive: var(--danger);
-    --destructive-foreground: #fcf9f3;
+    --destructive-foreground: #fffdfb;
     --border: var(--line);
     --input: var(--line-strong);
     --ring: var(--brand);
-    --chart-1: var(--brand);
-    --chart-2: var(--sage);
-    --chart-3: var(--amber);
+    --chart-1: var(--color-coral);
+    --chart-2: var(--color-aqua);
+    --chart-3: var(--color-blush);
     --chart-4: var(--ink-faint);
     --chart-5: var(--line-strong);
     --radius: 0.375rem;
     --sidebar-background: var(--card);
     --sidebar-foreground: var(--ink);
-    --sidebar-primary: var(--brand);
-    --sidebar-primary-foreground: #fcf9f3;
+    --sidebar-primary: var(--color-coral);
+    --sidebar-primary-foreground: var(--color-plum);
     --sidebar-accent: var(--sunk);
     --sidebar-accent-foreground: var(--ink);
     --sidebar-border: var(--line);
@@ -151,24 +161,24 @@
 }
 
 .dark {
-    --paper: #1c1815;
-    --card: #26211d;
-    --sunk: #2f2923;
-    --ink: #f1eadf;
-    --ink-soft: #cdbfae;
-    --ink-faint: #b3a697;
-    --line: #3d352d;
-    --line-strong: #8a7d6d;
-    --brand: #e0866b;
-    --brand-soft: #3d2a22;
-    --sage: #9bbd9f;
-    --sage-soft: #26332a;
-    --amber: #e3b95c;
-    --amber-soft: #3a2f17;
-    --danger: #ee9a94;
-    --danger-soft: #3d2423;
-    --primary-foreground: #1c1815;
-    --destructive-foreground: #1c1815;
+    --paper: #2b1f25;
+    --card: #36272e;
+    --sunk: #3f2e36;
+    --ink: #fff9f5;
+    --ink-soft: #e3d2d9;
+    --ink-faint: #c9b3bc;
+    --line: #4d3a43;
+    --line-strong: #8e7581;
+    --brand: #f29191;
+    --brand-soft: #4a2f35;
+    --sage: #8fd6d6;
+    --sage-soft: #26403f;
+    --amber: #e8be7a;
+    --amber-soft: #3f3220;
+    --danger: #f5a0a8;
+    --danger-soft: #4a2428;
+    --primary-foreground: var(--color-plum);
+    --destructive-foreground: #2b1f25;
     --card-foreground: var(--ink);
 }
 

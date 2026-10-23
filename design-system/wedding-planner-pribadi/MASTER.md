@@ -18,8 +18,8 @@ mobile-first, Indonesia" (dial Variance 5, Motion 3, Density 6). Output mentahny
 | Motion subtle 300–400 ms | Dipakai dengan durasi lebih pendek | Dipersingkat menjadi 150–220 ms. |
 
 ## Konsep
-Buku catatan pernikahan yang dirancang dengan baik: kertas ivory hangat, tinta charcoal-cokelat,
-satu aksen terracotta. Angka uang besar dan tenang, dengan label status yang dibaca lewat teks + ikon.
+Buku catatan pernikahan yang dirancang dengan baik: kertas ivory hangat, tinta plum,
+aksen coral-blush dengan latar mint. Angka uang besar dan tenang, dengan label status yang dibaca lewat teks + ikon.
 
 ## Dials
 - **Variance 5** — halaman login, onboarding, dan countdown boleh asimetris; anggaran dan vendor rapi dan terstruktur.
@@ -28,31 +28,37 @@ satu aksen terracotta. Angka uang besar dan tenang, dengan label status yang dib
 
 ## Token warna (light)
 
+Sumber palet: Color Hunt `F29191 F7ADAD B1E5E6 CCFBFA` + ivory `#FFF9F5` dan plum `#49343D` (docs/OUR_LITTLE_WORLD.md).
+Menggantikan palet ivory/terracotta sebelumnya. Token utilitas pastel: `coral`, `blush`, `aqua`, `mint`, `ivory`, `plum`.
+
 | Token | Hex | Kegunaan | Kontras terukur |
 | --- | --- | --- | --- |
-| `--paper` | `#F7F2E9` | latar halaman | — |
-| `--card` | `#FCF9F3` | permukaan terangkat | — |
-| `--sunk` | `#EFE7D9` | permukaan tertekan, header tabel | — |
-| `--ink` | `#2A2420` | teks utama | 13,73 di atas paper |
-| `--ink-soft` | `#5A4F46` | teks sekunder | 7,13 |
-| `--ink-faint` | `#6F6359` | caption, label | 5,22 (4,74 di atas sunk) |
-| `--line` | `#DDD2C0` | garis dekoratif (bukan kontrol) | — |
-| `--line-strong` | `#8F8271` | border input/kontrol | ≥ 3:1 (WCAG 1.4.11) |
-| `--brand` | `#9A3F27` | CTA, tautan, state aktif | 6,05; teks `#FCF9F3` di atasnya 6,42 |
-| `--brand-soft` | `#F0DCD2` | latar chip aksen | — |
-| `--sage` | `#44604A` | status aman / selesai | 6,24 |
-| `--sage-soft` | `#E1E8DC` | latar status aman | — |
-| `--amber` | `#7A5200` | status mendekati / perlu perhatian | 6,21 |
-| `--amber-soft` | `#F3E5C3` | latar status mendekati | — |
-| `--danger` | `#A12B2B` | status melebihi / error | 6,50 |
-| `--danger-soft` | `#F4D9D6` | latar status melebihi | — |
+| `--paper` | `#FFF9F5` | latar halaman (Warm Ivory) | — |
+| `--card` | `#FFFDFB` | permukaan terangkat | — |
+| `--sunk` | `#E6F7F6` | permukaan tertekan (tint Mint Ice) | — |
+| `--ink` | `#49343D` | teks utama (Deep Plum) | 10,92 di atas paper |
+| `--ink-soft` | `#645059` | teks sekunder | 7,10 |
+| `--ink-faint` | `#765F6A` | caption, label | 5,57 (5,26 di atas sunk) |
+| `--line` | `#ECDAD8` | garis dekoratif | — |
+| `--line-strong` | `#8C7480` | border input/kontrol | 4,09 (≥ 3:1) |
+| `--primary` | `#F29191` | latar tombol utama (Coral Pink); teks plum di atasnya | 5,01 |
+| `--brand` | `#B04545` | tautan, state aktif, progres (coral versi gelap untuk teks) | 5,32; 5,02 di atas sunk |
+| `--brand-soft` | `#FCE4E2` | latar chip aksen / hari ini | brand di atasnya 4,58 |
+| `--sage` | `#2B6A6A` | status aman / selesai | 5,97 |
+| `--sage-soft` | `#D9F6F5` | latar status aman | 5,47 |
+| `--amber` | `#85541A` | status perlu perhatian | 6,13 |
+| `--amber-soft` | `#FBEBD3` | latar status mendekati | 5,46 |
+| `--danger` | `#B03040` | status melebihi / error | 6,02 |
+| `--danger-soft` | `#FCE0E0` | latar status melebihi | 5,05 |
 
-Mode gelap (tidak boleh rusak): `--paper #1C1815`, `--card #26211D`, `--ink #F1EADF` (14,76),
-`--ink-faint #B3A697` (7,40), `--brand #E0866B` (6,54). Tidak ada `#fff` atau `#000` murni.
+Coral murni tidak dipakai sebagai warna teks (2,3:1 di atas ivory). Amber dan danger di luar palet Color Hunt dipertahankan sebagai warna semantik agar status tetap bisa dibedakan.
+
+Mode gelap (tidak boleh rusak): `--paper #2B1F25`, `--card #36272E`, `--ink #FFF9F5` (15,18), `--ink-faint #C9B3BC` (8,04),
+`--brand #F29191` (6,97). Tidak ada `#fff` atau `#000` murni.
 
 **Status anggaran tidak bergantung warna:** setiap status = ikon + kata ("Aman", "Mendekati batas", "Melebihi") + warna.
 
-> Catatan nama: terracotta bernama `--brand` (bukan `--accent`) karena `--accent` pada shadcn dipakai untuk latar hover.
+> Catatan nama: `--brand` (bukan `--accent`) karena `--accent` pada shadcn dipakai untuk latar hover.
 
 ## Tipografi (maksimal 2 keluarga, self-host, `font-display: swap`)
 - **Heading: Fraunces Variable** — serif editorial dengan karakter hangat; dipakai untuk h1–h3 dan angka besar di ringkasan.
