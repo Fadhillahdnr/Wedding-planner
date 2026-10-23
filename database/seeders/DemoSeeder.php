@@ -7,6 +7,7 @@ use App\Enums\MemberRole;
 use App\Models\BudgetItem;
 use App\Models\FundingSource;
 use App\Models\Payment;
+use App\Models\ScoreCriterion;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\VendorCandidate;
@@ -107,7 +108,7 @@ class DemoSeeder extends Seeder
         ]);
 
         foreach (array_chunk($scores, 2) as [$criterion, $score]) {
-            $id = \App\Models\ScoreCriterion::where('name', $criterion)->value('id');
+            $id = ScoreCriterion::where('name', $criterion)->value('id');
             $candidate->scores()->create(['score_criterion_id' => $id, 'score' => $score]);
         }
 
