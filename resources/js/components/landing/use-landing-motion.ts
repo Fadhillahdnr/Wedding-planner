@@ -61,7 +61,7 @@ export function useLandingMotion({ root, frame }: Refs) {
                             0.24,
                         )
                         .to(q('[data-copy="dream"]'), { yPercent: -10, autoAlpha: 0, duration: 0.14 }, 0.56)
-                        .to(frame.current, { scale: wide ? 1.12 : 1.06, duration: 0.7 }, 0)
+                        .to(frame.current, { scale: wide ? 1.05 : 1.03, duration: 0.7 }, 0)
                         .fromTo(q('[data-copy="world"]'), { yPercent: 14, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.14 }, 0.8);
 
                     if (wide) {
