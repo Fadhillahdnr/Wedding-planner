@@ -30,10 +30,10 @@ class DemoSeeder extends Seeder
         }
 
         $wedding = Wedding::create([
-            'partner_one_name' => 'Alya (contoh)',
-            'partner_two_name' => 'Bima (contoh)',
+            'partner_one_name' => 'Fadhillah',
+            'partner_two_name' => 'Regina',
             'target_month' => now()->addMonths(22)->startOfMonth(),
-            'city' => 'Bandung',
+            'city' => 'Sukabumi',
             'guest_estimate' => 250,
             'total_budget' => 250_000_000,
             'tradition' => 'Sunda',

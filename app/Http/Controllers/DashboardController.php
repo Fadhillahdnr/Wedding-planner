@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Domain\Templates\WeddingTemplates;
 use App\Enums\TaskStatus;
+use App\Models\LoveNote;
+use App\Models\Memory;
 use App\Models\Payment;
 use App\Models\Task;
 use App\Models\VendorSlot;
 use App\Services\BudgetOverview;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -48,12 +51,30 @@ class DashboardController extends Controller
             ->groupBy('phase')
             ->map(fn ($tasks) => ['done' => $tasks->where('status', TaskStatus::Done)->count(), 'total' => $tasks->count()]);
 
+        $recentMemories = Memory::query()->with('media')->latest('id')->limit(3)->get();
+        // Catatan terbaru dari pasangan yang sudah boleh dibaca (penulis lain, bersama, tanggal buka tiba).
+        $partnerNote = LoveNote::query()
+            ->with('author:id,name')
+            ->readableBy($request->user(), $today->toDateString())
+            ->where('author_id', '!=', $request->user()->id)
+            ->latest('id')
+            ->first();
+
         return Inertia::render('dashboard', [
+            'memories' => $recentMemories->map(fn (Memory $m) => [
+                'id' => $m->id,
+                'title' => $m->title,
+                'happened_on' => $m->happened_on?->toDateString(),
+                'photo_id' => $m->media->firstWhere('kind', 'photo')?->id,
+            ]),
+            'partner_note' => $partnerNote ? ['title' => $partnerNote->title, 'body' => $partnerNote->body, 'author' => $partnerNote->author->name] : null,
             'wedding' => [
                 'couple' => $wedding->coupleLabel(),
                 'target_date' => $wedding->target_date?->toDateString(),
                 'target_month' => $wedding->target_month?->format('Y-m'),
                 'estimated' => $wedding->dateIsEstimated(),
+                // Awal hari H menurut zona waktu pernikahan; countdown dihitung ulang dari sini di browser.
+                'target_at' => $wedding->target_date ? Carbon::parse($wedding->target_date->toDateString(), $wedding->timezone)->toIso8601String() : null,
                 'days_left' => $reference ? (int) $today->diffInDays($reference->startOfDay(), false) : null,
                 'guest_estimate' => $wedding->guest_estimate,
             ],
