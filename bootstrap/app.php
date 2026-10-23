@@ -22,6 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // Di belakang proxy/tunnel (mis. Cloudflare) agar URL & cookie memakai HTTPS yang benar.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : explode(',', $proxies));
+        }
+
         $middleware->alias(['workspace' => EnsureWorkspace::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

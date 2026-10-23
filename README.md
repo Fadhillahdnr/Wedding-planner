@@ -14,15 +14,20 @@ npm run build && php artisan serve
 ```
 Login → onboarding → undang pasangan dari Pengaturan. Data contoh (dev saja): `php artisan db:seed --class=DemoSeeder`.
 
-## Docker Desktop (bind mount)
+## Docker Desktop (bind mount + link publik)
 ```bash
 docker compose up -d --build        # sekali saja (build pertama ±3 menit: composer + npm)
+./docker/url.sh                     # cetak link publik https://<acak>.trycloudflare.com
 docker compose exec app php artisan app:create-owner --name="Nama" --email=kamu@contoh.com --password="minimal-12-karakter"
 ```
-Buka http://localhost:8000. Kode di folder ini di-bind-mount ke container: edit PHP → langsung aktif, edit React → HMR Vite (port 5173),
-tanpa `compose up`/build ulang. Rebuild hanya perlu bila `Dockerfile` berubah. `vendor/` dan `node_modules/` disimpan di volume Docker (bukan di host).
-Container selalu memakai PostgreSQL lokal (`db`, host port 5434), bukan Supabase di `.env`. Perintah lain: `docker compose exec app vendor/bin/pest`
-(belum bisa: `phpunit.xml` menunjuk 127.0.0.1:5433; jalankan test dari host seperti di bawah), `docker compose down` (tambah `-v` untuk menghapus data).
+Lokal: http://localhost:8000. Link publik dibuat otomatis oleh service `tunnel` (Cloudflare quick tunnel) setiap `docker compose up`;
+URL-nya **berubah tiap start** dan tidak butuh akun Cloudflare. Untuk URL tetap, pakai named tunnel (butuh akun + domain).
+
+- Kode di-bind-mount: edit PHP langsung aktif; aset React dibangun ulang otomatis (`vite build --watch`) — muat ulang browser. Tanpa `compose up`/build ulang; rebuild hanya bila `Dockerfile` berubah.
+- Aplikasi privat (tanpa pendaftaran, `noindex`), tetapi halaman login ikut terbuka untuk siapa pun yang tahu link. Pakai kata sandi kuat; `docker compose stop tunnel` untuk menutup akses publik.
+- Container selalu memakai PostgreSQL lokal (`db`, host port 5434), bukan Supabase di `.env`.
+- `vendor/` dan `node_modules/` ada di volume Docker. `docker compose down -v` menghapus data DB.
+- Test belum bisa di container (`phpunit.xml` menunjuk 127.0.0.1:5433); jalankan dari host seperti di bawah.
 
 ## Test & kualitas
 ```bash

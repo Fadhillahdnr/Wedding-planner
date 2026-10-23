@@ -15,7 +15,10 @@ x-app: &app
     DB_USERNAME: postgres
     DB_PASSWORD: secret
     DB_URL: ""
+    PHP_CLI_SERVER_WORKERS: "4"
     APP_URL: http://localhost:8000
+    # Di belakang tunnel Cloudflare (HTTPS) — percayai header X-Forwarded-*.
+    TRUSTED_PROXIES: "*"
   depends_on:
     db:
       condition: service_healthy
@@ -37,18 +40,25 @@ services:
       app:
         condition: service_healthy
 
+  # Aset dibangun ulang otomatis tiap file berubah (tanpa dev server), supaya
+  # halaman juga berfungsi lewat tunnel publik. Muat ulang browser untuk melihat perubahan.
   vite:
     image: node:22-bookworm-slim
     working_dir: /var/www/html
-    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    command: sh -c "rm -f public/hot && npm ci && npm run build -- --watch"
     environment:
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
-      VITE_ORIGIN: http://localhost:5173
-    ports:
-      - "5173:5173"
     volumes:
       - .:/var/www/html
       - node_modules:/var/www/html/node_modules
+
+  # Quick tunnel Cloudflare: URL https://<acak>.trycloudflare.com berubah tiap start.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://app:8000
+    depends_on:
+      app:
+        condition: service_healthy
 
   db:
     image: postgres:16-alpine
