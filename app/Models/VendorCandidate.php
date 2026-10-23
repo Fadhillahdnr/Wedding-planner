@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Enums\CandidateStatus;
 use App\Models\Concerns\BelongsToWedding;
+use App\Services\Media\MediaLibrary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class VendorCandidate extends Model
 {
@@ -49,6 +51,16 @@ class VendorCandidate extends Model
     public function scores(): HasMany
     {
         return $this->hasMany(VendorScore::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(fn (self $c) => app(MediaLibrary::class)->purgeFor($c));
+    }
+
+    public function media(): MorphMany
+    {
+        return $this->morphMany(MediaAsset::class, 'mediable')->where('status', 'ready')->oldest();
     }
 
     public function meetings(): HasMany

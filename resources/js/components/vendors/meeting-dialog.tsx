@@ -1,4 +1,5 @@
 import { TextAreaField, TextField } from '@/components/planner/field';
+import { MediaGallery } from '@/components/planner/media-gallery';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { tanggal } from '@/lib/format';
@@ -32,6 +33,19 @@ export function MeetingDialog({ open, onOpenChange, candidate, slotId, today }: 
                     <DialogDescription>Catat hasil survei atau meeting, lalu jadikan tindak lanjut sebagai tugas.</DialogDescription>
                 </DialogHeader>
 
+                {candidate && (
+                    <section aria-label="Dokumen penawaran" className="space-y-2">
+                        <h3 className="text-sm font-medium">Dokumen penawaran</h3>
+                        <MediaGallery
+                            target="vendor_candidate"
+                            targetId={candidate.id}
+                            items={candidate.media}
+                            accept="application/pdf,image/jpeg,image/png,image/webp"
+                            label="Tambah dokumen / foto"
+                        />
+                    </section>
+                )}
+
                 {candidate && candidate.meetings.length > 0 && (
                     <ul className="divide-line divide-y border-y">
                         {candidate.meetings.map((m) => (
@@ -49,6 +63,13 @@ export function MeetingDialog({ open, onOpenChange, candidate, slotId, today }: 
                                     </Button>
                                 </div>
                                 {m.notes && <p className="text-ink-soft whitespace-pre-line">{m.notes}</p>}
+                                <MediaGallery
+                                    target="vendor_meeting"
+                                    targetId={m.id}
+                                    items={m.media}
+                                    accept="image/jpeg,image/png,image/webp"
+                                    label="Tambah foto"
+                                />
                                 {m.follow_up && (
                                     <p className="flex flex-wrap items-center gap-2">
                                         <span>

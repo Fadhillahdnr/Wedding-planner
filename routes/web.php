@@ -3,6 +3,7 @@
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\VendorController;
@@ -52,6 +53,11 @@ Route::middleware(['auth', 'workspace'])->group(function () {
     Route::post('vendor/kandidat/{candidate}/pilih', [VendorController::class, 'choose'])->name('vendors.candidates.choose');
     Route::post('vendor/kandidat/{candidate}/pertemuan', [VendorController::class, 'storeMeeting'])->name('vendors.meetings.store');
     Route::delete('vendor/pertemuan/{meeting}', [VendorController::class, 'destroyMeeting'])->name('vendors.meetings.destroy');
+
+    Route::post('media/tanda-tangan', [MediaController::class, 'signature'])->middleware('throttle:media-signature')->name('media.signature');
+    Route::post('media/{asset}/konfirmasi', [MediaController::class, 'confirm'])->middleware('throttle:media-signature')->name('media.confirm');
+    Route::get('media/{asset}', [MediaController::class, 'show'])->name('media.show');
+    Route::delete('media/{asset}', [MediaController::class, 'destroy'])->name('media.destroy');
 
     Route::get('pengaturan/pernikahan', [WeddingSettingsController::class, 'edit'])->name('wedding.edit');
     Route::put('pengaturan/pernikahan', [WeddingSettingsController::class, 'update'])->name('wedding.update');

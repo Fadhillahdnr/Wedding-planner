@@ -126,8 +126,16 @@ export interface CriterionData {
     weight: number;
 }
 
+export interface MediaItem {
+    id: number;
+    kind: 'photo' | 'document';
+    format: string | null;
+    bytes: number;
+}
+
 export interface MeetingData {
     id: number;
+    media: MediaItem[];
     met_on: string;
     notes: string | null;
     follow_up: string | null;
@@ -154,5 +162,6 @@ export interface CandidateData {
     scores: Record<string, number>;
     weighted_score: number | null;
     estimate_difference: number | null;
+    media: MediaItem[];
     meetings: MeetingData[];
 }

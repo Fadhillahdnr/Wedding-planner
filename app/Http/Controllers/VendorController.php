@@ -8,6 +8,7 @@ use App\Domain\Vendors\VendorComparison;
 use App\Enums\CandidateStatus;
 use App\Enums\VendorNeed;
 use App\Http\Requests\VendorCandidateRequest;
+use App\Models\MediaAsset;
 use App\Models\ScoreCriterion;
 use App\Models\VendorCandidate;
 use App\Models\VendorMeeting;
@@ -85,7 +86,7 @@ class VendorController extends Controller
         $wedding = $request->user()->wedding();
         $criteria = ScoreCriterion::query()->orderBy('sort_order')->get(['id', 'name', 'weight']);
         $weights = $criteria->pluck('weight', 'id')->all();
-        $slot->load(['candidates.scores', 'candidates.meetings', 'budgetItem:id,name,estimate_min,estimate_max,agreed_amount,pricing_mode,price_per_guest']);
+        $slot->load(['candidates.scores', 'candidates.media', 'candidates.meetings.media', 'budgetItem:id,name,estimate_min,estimate_max,agreed_amount,pricing_mode,price_per_guest']);
 
         $item = $slot->budgetItem;
         $estimate = $item ? $calculator->estimate([
@@ -123,8 +124,10 @@ class VendorController extends Controller
                 'scores' => $c->scores->pluck('score', 'score_criterion_id'),
                 'weighted_score' => $comparison->weightedScore($c->scores->pluck('score', 'score_criterion_id')->all(), $weights),
                 'estimate_difference' => $comparison->differenceFromEstimate($c->quoted_price, $estimate),
+                'media' => $c->media->map($this->mediaItem(...))->values(),
                 'meetings' => $c->meetings->map(fn ($m) => [
                     'id' => $m->id,
+                    'media' => $m->media->map($this->mediaItem(...))->values(),
                     'met_on' => $m->met_on->toDateString(),
                     'notes' => $m->notes,
                     'follow_up' => $m->follow_up,
@@ -205,5 +208,11 @@ class VendorController extends Controller
 
             $candidate->scores()->updateOrCreate(['score_criterion_id' => $criterionId], ['score' => (int) $value]);
         }
+    }
+
+    /** @return array{id:int,kind:string,format:?string,bytes:int} */
+    private function mediaItem(MediaAsset $a): array
+    {
+        return ['id' => $a->id, 'kind' => $a->kind, 'format' => $a->format, 'bytes' => (int) $a->bytes];
     }
 }
