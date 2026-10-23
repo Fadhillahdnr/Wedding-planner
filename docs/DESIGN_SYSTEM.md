@@ -4,7 +4,7 @@ Sumber kebenaran: `design-system/wedding-planner-pribadi/MASTER.md` (+ override 
 Dokumen ini merangkum keputusan dan menjelaskan alasannya.
 
 ## Konsep visual
-Buku catatan pernikahan di atas kertas ivory hangat: tinta cokelat-charcoal, satu aksen terracotta, angka uang yang besar dan tenang.
+Buku catatan pernikahan di atas kertas ivory hangat: tinta plum, aksen coral-blush dengan latar mint, angka uang yang besar dan tenang.
 
 ## Font
 - **Fraunces Variable** (heading, angka hero) — serif editorial yang tetap terbaca kecil.
